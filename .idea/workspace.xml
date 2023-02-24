@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="3e9acfe0-dfce-464a-8ad0-b140b258e515" name="Default" comment="" />
+    <list default="true" id="3e9acfe0-dfce-464a-8ad0-b140b258e515" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/ImageProcessing.py" beforeDir="false" afterPath="$PROJECT_DIR$/ImageProcessing.py" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -26,8 +28,8 @@
       <file leaf-file-name="Profiles_intercase.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Profiles_intercase.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="13617">
-              <caret line="813" column="121" selection-start-line="813" selection-start-column="104" selection-end-line="813" selection-end-column="121" />
+            <state relative-caret-position="-1779">
+              <caret line="525" column="8" selection-start-line="525" selection-start-column="8" selection-end-line="525" selection-end-column="8" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -38,7 +40,7 @@
       <file leaf-file-name="GasProbeTrav.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/GasProbeTrav.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1071">
+            <state relative-caret-position="476">
               <caret line="75" column="68" selection-start-line="74" selection-start-column="7" selection-end-line="75" selection-end-column="68" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
@@ -50,8 +52,8 @@
       <file leaf-file-name="ImageProcessing.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/ImageProcessing.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="309">
-              <caret line="335" column="5" selection-start-line="335" selection-start-column="5" selection-end-line="335" selection-end-column="5" />
+            <state relative-caret-position="240">
+              <caret line="78" column="59" lean-forward="true" selection-start-line="78" selection-start-column="59" selection-end-line="78" selection-end-column="59" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -119,6 +121,9 @@
       </list>
     </option>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
@@ -137,6 +142,7 @@
     <option name="width" value="1290" />
     <option name="height" value="687" />
   </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
@@ -280,9 +286,9 @@
       <window_info content_ui="combo" id="Project" order="1" sideWeight="0.4945534" weight="0.24920969" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
-      <window_info anchor="bottom" id="Version Control" order="7" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Version Control" order="7" />
       <window_info anchor="bottom" id="Python Console" order="7" weight="0.32897604" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.42592594" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.3845316" />
       <window_info id="Structure" order="2" sideWeight="0.5054466" visible="true" weight="0.24920969" />
       <window_info anchor="bottom" id="Terminal" order="7" />
       <window_info id="Favorites" order="0" side_tool="true" />
@@ -329,16 +335,21 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/ImageProcessing.py</url>
-          <line>196</line>
+          <line>208</line>
           <option name="timeStamp" value="25" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/ImageProcessing.py</url>
-          <line>185</line>
+          <line>197</line>
           <option name="timeStamp" value="27" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/ImageProcessing.py</url>
+          <line>113</line>
+          <option name="timeStamp" value="28" />
+        </line-breakpoint>
       </breakpoints>
-      <option name="time" value="28" />
+      <option name="time" value="29" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
@@ -709,16 +720,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Profiles_intercase.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="13617">
-          <caret line="813" column="121" selection-start-line="813" selection-start-column="104" selection-end-line="813" selection-end-column="121" />
-          <folding>
-            <element signature="e#0#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/ExhaustEmissions.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2805">
@@ -783,8 +784,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/GasProbeTrav.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1071">
+        <state relative-caret-position="476">
           <caret line="75" column="68" selection-start-line="74" selection-start-column="7" selection-end-line="75" selection-end-column="68" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Profiles_intercase.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1779">
+          <caret line="525" column="8" selection-start-line="525" selection-start-column="8" selection-end-line="525" selection-end-column="8" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>
@@ -793,8 +804,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/ImageProcessing.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="309">
-          <caret line="335" column="5" selection-start-line="335" selection-start-column="5" selection-end-line="335" selection-end-column="5" />
+        <state relative-caret-position="240">
+          <caret line="78" column="59" lean-forward="true" selection-start-line="78" selection-start-column="59" selection-end-line="78" selection-end-column="59" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>

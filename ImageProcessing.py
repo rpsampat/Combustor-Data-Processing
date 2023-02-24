@@ -49,7 +49,7 @@ class ImageProcessing:
         :return:
         """
         path = self.drive + self.folder
-        identifiers = ["NV100_", "H2_", "_phi_",]
+        identifiers = ["NV100_", "H2_50", "_phi_",]
         identifier_exclude = ["_index"]
         subdir_list = next(os.walk(path))[1]  # list of immediate subdirectories within the data directory
         sub_list=[]
@@ -72,6 +72,8 @@ class ImageProcessing:
             path_file = path  + subdir+ '/'
             print(path_file)
             filenames = next(os.walk(path_file))[2]
+            if len(filenames)<5:
+                continue
             if not os.path.exists(path_file+'Variance'):
                 os.makedirs(path_file+'Variance')
             # Iterating through files for a particular case
@@ -79,30 +81,39 @@ class ImageProcessing:
             for name in filenames:
                 count += 1
                 img = cv2.imread(path_file + name)  # bgr
+
                 shp = np.shape(img)
                 img[:, :, 1] = np.zeros((shp[0], shp[1]))
                 img[:, :, 2] = np.zeros((shp[0], shp[1]))
                 """img[:,:,1] = np.zeros((shp[0],shp[1]))
                 img[:, :, 2] = np.zeros((shp[0], shp[1]))
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)"""
-                xlim = img.shape[1]
+                #xlim = img.shape[1]
                 # img = img[:,xlim/5:xlim/2,:]
-                # cv2.namedWindow('original', cv2.WINDOW_AUTOSIZE)
-                # cv2.imshow('original',img)
-                blue_img = np.array(img, dtype=int)  # [:,:,0]
+                #cv2.namedWindow('original', cv2.WINDOW_AUTOSIZE)
+                #cv2.imshow('original',img)
+                img_thresh = img#self.image_enhancement(img, False,lower_lim=230)
+                blue_img = np.array(img_thresh, dtype=int)  #
                 try:
                     avg_img = np.add(avg_img, blue_img)
                 except:
                     avg_img = blue_img
                     exception += 1
+                """cv2.namedWindow('original', cv2.WINDOW_NORMAL)
+                cv2.imshow('original', img)
+                cv2.waitKey(0)"""
 
-                """if count==10:
+                """if count==30:
                     break"""
 
-                """cv2.namedWindow('original', cv2.WINDOW_NORMAL)
-                cv2.imshow('original',img)
-                cv2.waitKey(0)"""
-            avg_img = avg_img / count
+
+
+            if count==0:
+                continue
+            avg_img = avg_img/(count)
+            """cv2.namedWindow('original', cv2.WINDOW_NORMAL)
+            cv2.imshow('original', avg_img)
+            cv2.waitKey(0)"""
             self.save_image_named(avg_img, 'avg_'+str(count), path_file + 'Variance/')
             count = 0
             for name in filenames:
@@ -122,6 +133,7 @@ class ImageProcessing:
                 except:
                     stdv_img = np.power(var_img,2.0)
                 self.save_image_named(var_img, 'var' + str(count), path_file + 'Variance/')
+
                 """if count==3:
                     break"""
 
@@ -149,7 +161,7 @@ class ImageProcessing:
             img = cv2.imread(file_loc+name)
             # Equalising histogram and extracting points above a certain threshold which are
             #  expected to represent flame structures
-            img_thresh = self.image_enhancement(img,False)
+            img_thresh = self.image_enhancement(img,False,lower_lim=150)
             img_ind = np.where(img_thresh>0)
             #self.edge_detect(img)
             # meshgrid
@@ -221,7 +233,7 @@ class ImageProcessing:
         """plt.imshow(np.uint8(db.labels_.reshape((shp[0],shp[1]))))
         plt.show()"""
 
-    def image_enhancement(self,img,show):
+    def image_enhancement(self,img,show,lower_lim):
         gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         hist = cv2.calcHist(gray_img, [0], None, [256], [0, 256])
@@ -229,7 +241,7 @@ class ImageProcessing:
         hist_eqhist = cv2.calcHist(gray_img_eqhist, [0], None, [256], [0, 256])
         #otsu_threshold, otsu_image_result = cv2.threshold(gray_img, 0, 255, cv2.THRESH_TRUNC + cv2.THRESH_OTSU)
         #print(otsu_threshold)
-        ret, thresh4 = cv2.threshold(gray_img_eqhist, 150, 255, cv2.THRESH_TOZERO)
+        ret, thresh4 = cv2.threshold(gray_img_eqhist, lower_lim, 255, cv2.THRESH_TOZERO)# use 150 for cluster
         if show==True:
             plt.subplot(121)
             plt.title("Image1")
