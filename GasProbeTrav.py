@@ -20,7 +20,7 @@ class GasProbeTrav:
         self.dataset = {}
         self.dataset_temperature = {}
         self.quant_list = ["Measured - Main Air", "Measured - Pilot Air", "Measured - Cooling Air",
-                           "Measured - CH4 Main", "'Raw TC Data'/'TC15'", "'Raw TC Data'/'Main Air'",
+                           "Measured - CH4 Main", "Measured - H2", "'Raw TC Data'/'TC15'", "'Raw TC Data'/'Main Air'",
                            "'Raw TC Data'/'TC10'",
                            "'Raw TC Data'/'Cooling Air'", "'Raw TC Data'/'Fuel Temp'", "Offset",
                            "Position", "Avg Exhaust Temp", "'Pressure & GA'/'CH4'", "'Pressure & GA'/'CO2'",
@@ -28,6 +28,7 @@ class GasProbeTrav:
                            "'Pressure & GA'/'O2'"]
         self.quant = {'mdot_air': "Measured - Main Air", 'mdot_pilotair': "Measured - Pilot Air",
                       'mdot_coolair': "Measured - Cooling Air", 'mdot_ch4': "Measured - CH4 Main",
+                      'mdot_h2': "Measured - H2",
                       'TC15': "'Raw TC Data'/'TC15'", 'Temp_mainair': "'Raw TC Data'/'Main Air'",
                       'Temp_flange': "'Raw TC Data'/'TC10'", 'Temp_coolair': "'Raw TC Data'/'Cooling Air'",
                       'Temp_fuel': "'Raw TC Data'/'Fuel Temp'", 'y_pos': "'Traverse System'/'Offset'",
@@ -35,6 +36,24 @@ class GasProbeTrav:
                       'T_exhaust': "Avg Exhaust Temp", 'CH4': "'Pressure & GA'/'CH4'", 'CO2': "'Pressure & GA'/'CO2'",
                       'CO': "'Pressure & GA'/'CO'", 'NO': "'Pressure & GA'/'NO'", 'NO2': "'Pressure & GA'/'NO2'",
                       'O2': "'Pressure & GA'/'O2'"}
+        gas = ct.Solution('gri30.yaml')
+        N2_diluent = ct.Solution('gri30.yaml')
+        CO2_diluent = ct.Solution('gri30.yaml')
+        air = ct.Solution('air.yaml')
+        species = gas.species_names
+        air_species = air.species_names
+        gas.TPX = 293.15, ct.one_atm, {'CH4': 1.0}  # NTP
+        self.rho_n_CH4 = gas.density
+        gas.TPX = 293.15, ct.one_atm, {'H2': 1.0}  # NTP
+        self.rho_n_H2 = gas.density
+        air.TP = 293.15, ct.one_atm  # NTP
+        self.rho_n_air = air.density
+
+        self.MW_air = 28.97  # kg/kmol
+        self.MW_O2 = gas.molecular_weights[species.index('O2')]
+        self.MW_N2 = gas.molecular_weights[species.index('N2')]
+        self.MW_CH4 = gas.molecular_weights[species.index('CH4')]
+        self.MW_H2 = gas.molecular_weights[species.index('H2')]
 
 
     def read_tdms(self,file):
@@ -75,6 +94,55 @@ class GasProbeTrav:
         with open(self.drive + self.folder + "Unified_dataset_GA_traverse", 'wb') as file:
             pickle.dump(data_GA_trav, file, pickle.HIGHEST_PROTOCOL)
 
+    def spec_corr(self,X_O2, X_CO,X_CO2,X_CH4, X_NO, X_NO2, mdot_CH4, mdot_H2, mdot_air_main, mdot_air_pilot):
+        x_O2 = 15 # % O2 corrected
+        X_CO_corr = (X_CO*(1-x_O2/100.0)/(1-X_O2))*1e6 # dry at x% O2 (ppm)
+        X_CO2_corr = (X_CO2 * (1 - x_O2 / 100.0) / (1 - X_O2))*1e2 # dry at x% O2 (%)
+        X_CH4_corr = (X_CH4 * (1 - x_O2 / 100.0) / (1 - X_O2))*1e6 # dry at x% O2 (ppm)
+        n_t_dry = (mdot_CH4 / self.MW_CH4) / (X_CO + X_CO2 + X_CH4)
+        n_h2 = mdot_H2 / self.MW_H2
+        mdot_air_tot = mdot_air_main + mdot_air_pilot
+        n_h2o = n_h2 + 2 * X_CO * n_t_dry + 2 * X_CO2 * n_t_dry
+        n_t_wet = n_t_dry + n_h2o
+        n_corr = n_t_dry/(1-x_O2/100.0)
+        wet = 'n'
+        if wet == 'y':
+            X_NO_corr = (X_NO * (1 - x_O2 / 100.0) / (1 - X_O2)) * 1e6  # (X_NO*n_t_wet/n_corr)*1e6 # dry at x% O2 (ppm)
+            X_NO2_corr = (X_NO2 * (1 - x_O2 / 100.0) / (
+                        1 - X_O2)) * 1e6  # (X_NO2 * n_t_wet / n_corr)*1e6 # dry at x% O2 (ppm)
+        else:
+            X_NO_corr = (X_NO * n_t_wet / n_corr) * 1e6  # dry at x% O2 (ppm)
+            X_NO2_corr = (X_NO2 * n_t_wet / n_corr) * 1e6  # dry at x% O2 (ppm)
+        return X_CO_corr, X_CO2_corr, X_CH4_corr, X_NO_corr, X_NO2_corr
+
+
+    def excess_O2(self,X_O2, X_CO,X_CO2,X_CH4, mdot_CH4, mdot_H2, mdot_air_main, mdot_air_pilot):
+        """
+        Calculate excess O2 % based on measured dry values of carbon species, inlet fuel and air mass flows.
+        :param X_O2:
+        :param X_CO:
+        :param X_CO2:
+        :param X_CH4:
+        :param mdot_CH4:
+        :param mdot_H2:
+        :param mdot_air_main:
+        :param mdot_air_pilot:
+        :return:
+        """
+        n_t_dry = (mdot_CH4/self.MW_CH4)/(X_CO+X_CO2+X_CH4)
+        n_h2 = mdot_H2/self.MW_H2
+        mdot_air_tot = mdot_air_main + mdot_air_pilot
+        n_h2o = n_h2 + 2*X_CO*n_t_dry + 2*X_CO2*n_t_dry
+        n_h2o_nt_dry = (n_h2/n_t_dry) + 2*X_CO + 2*X_CO2
+        n_o2_in = (mdot_air_tot/self.MW_air)*(1/4.76)
+        X_o2_wet = X_O2/(1+n_h2o_nt_dry)
+        n_o2_wet = ((X_CO+2*X_CO2+2*X_O2)*n_t_dry/2.0) + (n_h2o/2.0)
+        excess_o2 = 100.0*(n_o2_wet-n_o2_in)/n_o2_in
+        mdot_excess_air = (n_o2_wet-n_o2_in)*4.76*self.MW_air
+
+        return excess_o2,mdot_excess_air
+
+
     def data_plot(self,port,H2_perc):
         pathsave = self.drive + self.folder + "/Results_GA_trav/"
         with open(self.drive + self.folder + "Unified_dataset_GA_traverse", 'rb') as f:
@@ -83,7 +151,7 @@ class GasProbeTrav:
         conditions = dataset.keys()
         #port=2
         #H2_perc = 80
-        identifiers = ['Port'+str(port),'_phi_','H2_'+str(H2_perc)]
+        identifiers = ['Port'+str(port),'_phi_','H2_'+str(H2_perc)+'_']
         phi_list=[0.3,0.6,0.8,1.0]
         ident_excl = ['N2_8','_CO2_']
         marker_list = ["o", "x", "x"]
@@ -96,10 +164,12 @@ class GasProbeTrav:
         fig3, ax3 = plt.subplots()
         fig4, ax4 = plt.subplots()
         fig5, ax5 = plt.subplots()
+        fig6, ax6 = plt.subplots()
+        fig7, ax7 = plt.subplots()
         mkr_sz = 1.0
         for phi in phi_list:
             for name in conditions:
-                id_list = np.append(identifiers,'_phi_'+str(phi))
+                id_list = np.append(identifiers,'_phi_'+str(phi)+"_")
                 check_id = [(x in name) for x in id_list]
                 check_id_exclude = [(x in name) for x in ident_excl]
                 isfalse = False in check_id
@@ -114,19 +184,48 @@ class GasProbeTrav:
                     dx = np.max(np.abs(np.diff(xpos)))
                     N_kernel = int(12.0/dx)
                     xpos = np.convolve(xpos, np.ones(N_kernel) / N_kernel, mode='valid')
-                    X_CO = np.convolve(dataset[name]['CO'], np.ones(N_kernel) / N_kernel, mode='valid')
-                    X_CO2 = np.convolve(dataset[name]['CO2'], np.ones(N_kernel) / N_kernel, mode='valid')
-                    X_NO = np.convolve(dataset[name]['NO'], np.ones(N_kernel) / N_kernel, mode='valid')
-                    X_NO2 = np.convolve(dataset[name]['NO2'], np.ones(N_kernel) / N_kernel, mode='valid')
-                    X_O2 = np.convolve(dataset[name]['O2'], np.ones(N_kernel) / N_kernel, mode='valid')
-                    X_CH4 = np.convolve(dataset[name]['CH4'], np.ones(N_kernel) / N_kernel, mode='valid')
+                    X_CO = np.convolve(dataset[name]['CO'], np.ones(N_kernel) / N_kernel, mode='valid')*1e-6
+                    X_CO2 = np.convolve(dataset[name]['CO2'], np.ones(N_kernel) / N_kernel, mode='valid')*1e-2
+                    X_NO = np.convolve(dataset[name]['NO'], np.ones(N_kernel) / N_kernel, mode='valid')*1e-6
+                    X_NO2 = np.convolve(dataset[name]['NO2'], np.ones(N_kernel) / N_kernel, mode='valid')*1e-6
+                    X_O2 = np.convolve(dataset[name]['O2'], np.ones(N_kernel) / N_kernel, mode='valid')*1e-2
+                    X_CH4 = np.convolve(dataset[name]['CH4'], np.ones(N_kernel) / N_kernel, mode='valid')*1e-6
+                    mdot_air_main = (np.convolve(dataset[name]['mdot_air'], np.ones(N_kernel) / N_kernel, mode='valid')) * self.rho_n_air / 60000.0
+                    mdot_air_pilot = (np.convolve(dataset[name]['mdot_pilotair'], np.ones(N_kernel) / N_kernel, mode='valid')* 1.1381 - 0.6213) * self.rho_n_air / 60000.0
+                    mdot_ch4 = (np.convolve(dataset[name]['mdot_ch4'], np.ones(N_kernel) / N_kernel, mode='valid')) * self.rho_n_CH4 / 60000.0
+                    mdot_h2 = (np.convolve(dataset[name]['mdot_h2'], np.ones(N_kernel) / N_kernel, mode='valid')) * self.rho_n_H2 / 60000.0
+                    X_CO_list = []
+                    X_CO2_list = []
+                    X_O2_list = []
+                    X_NO_list = []
+                    X_NO2_list = []
+                    X_O2_list = []
+                    X_CH4_list = []
+                    O2_excess_list = []
+                    mdot_excess_air_list=[]
+                    for i in range(len(X_CH4)):
+                        excess_o2, mdot_excess_air = self.excess_O2(X_O2[i], X_CO[i], X_CO2[i], X_CH4[i], mdot_ch4[i], mdot_h2[i], mdot_air_main[i],
+                                                   mdot_air_pilot[i])
+                        X_CO_corr, X_CO2_corr, X_CH4_corr, X_NO_corr, X_NO2_corr = \
+                            self.spec_corr(X_O2[i], X_CO[i], X_CO2[i], X_CH4[i], X_NO[i], X_NO2[i], mdot_ch4[i], mdot_h2[i], mdot_air_main[i],
+                                           mdot_air_pilot[i])
+                        X_CO_list.append(X_CO_corr)
+                        X_CO2_list.append(X_CO2_corr)
+                        X_NO_list.append(X_NO_corr)
+                        X_NO2_list.append(X_NO2_corr)
+                        X_O2_list.append(X_O2[i]*1e2)
+                        X_CH4_list.append(X_CH4_corr)
+                        O2_excess_list.append(excess_o2)
+                        mdot_excess_air_list.append(mdot_excess_air*60000.0/self.rho_n_air)
 
-                    ax.scatter(xpos,X_CO, s=mkr_sz,color = color_list[count])#,marker=marker_list[0],color=color_list[count])
-                    ax1.scatter(xpos, X_CO2, s=mkr_sz, color = color_list[count])
-                    ax2.scatter(xpos, X_NO, s=mkr_sz, color = color_list[count])
-                    ax3.scatter(xpos, X_NO2, s=mkr_sz, color = color_list[count])
-                    ax4.scatter(xpos, X_O2, s=mkr_sz, color = color_list[count])
-                    ax5.scatter(xpos, X_CH4, s=mkr_sz, color=color_list[count])
+                    ax.scatter(xpos,X_CO_list, s=mkr_sz,color = color_list[count])#,marker=marker_list[0],color=color_list[count])
+                    ax1.scatter(xpos, X_CO2_list, s=mkr_sz, color = color_list[count])
+                    ax2.scatter(xpos, X_NO_list, s=mkr_sz, color = color_list[count])
+                    ax3.scatter(xpos, X_NO2_list, s=mkr_sz, color = color_list[count])
+                    ax4.scatter(xpos, X_O2_list, s=mkr_sz, color = color_list[count])
+                    ax5.scatter(xpos, X_CH4_list, s=mkr_sz, color=color_list[count])
+                    ax6.scatter(xpos, O2_excess_list, s=mkr_sz, color=color_list[count])
+                    ax7.scatter(xpos, mdot_excess_air_list, s=mkr_sz, color=color_list[count])
                     count += 1
                     break
 
@@ -178,6 +277,20 @@ class GasProbeTrav:
         fig5.savefig(pathsave + fig_name + '.pdf')
         fig5.savefig(pathsave + fig_name + '.png')
 
+        ax6.legend(xlegend, markerscale=mkr_sz_leg)
+        ax6.set_ylabel("Excess O2 (%)")
+        ax6.set_xlabel("Distance from wall/Radius of Chamber")
+        fig_name = "Excess O2_Port" + str(port) + "_H2_" + str(H2_perc) + "_vs_radialloc"
+        fig6.savefig(pathsave + fig_name + '.pdf')
+        fig6.savefig(pathsave + fig_name + '.png')
+
+        ax7.legend(xlegend, markerscale=mkr_sz_leg)
+        ax7.set_ylabel("Excess Air (lnpm)")
+        ax7.set_xlabel("Distance from wall/Radius of Chamber")
+        fig_name = "Excess Air mass_Port" + str(port) + "_H2_" + str(H2_perc) + "_vs_radialloc"
+        fig7.savefig(pathsave + fig_name + '.pdf')
+        fig7.savefig(pathsave + fig_name + '.png')
+
         plt.close('all')
 
         #plt.show()
@@ -192,7 +305,7 @@ class GasProbeTrav:
         conditions = dataset.keys()
         #port=2
         #H2_perc = 80
-        identifiers = ['Port','_phi_1.0','H2_'+str(H2_perc)]
+        identifiers = ['Port','_phi_0.8','H2_'+str(H2_perc)+'_']
         phi_list=[0.3,0.6,0.8,1.0]
         port_list = [2,3,5]
         ident_excl = ['N2_8','_CO2_']
@@ -304,9 +417,9 @@ if __name__=="__main__":
     #GPT.tdms_file_search()
     port_list = [2,3,5]
     H2_list = [0,50,80]
-    """for port in port_list:
+    for port in port_list:
         for H2 in H2_list:
-            GPT.data_plot(port,H2)"""
+            GPT.data_plot(port,H2)
 
-    for H2 in H2_list:
-        GPT.data_plot_leg_port(H2)
+    """for H2 in H2_list:
+        GPT.data_plot_leg_port(H2)"""
