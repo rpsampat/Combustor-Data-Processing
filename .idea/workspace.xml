@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3e9acfe0-dfce-464a-8ad0-b140b258e515" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GasProbeTrav.py" beforeDir="false" afterPath="$PROJECT_DIR$/GasProbeTrav.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ImageProcessing.py" beforeDir="false" afterPath="$PROJECT_DIR$/ImageProcessing.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -17,7 +17,7 @@
       <file leaf-file-name="Profiles_intercase.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Profiles_intercase.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="8721">
+            <state relative-caret-position="8925">
               <caret line="525" column="8" selection-start-line="525" selection-start-column="8" selection-end-line="525" selection-end-column="8" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
@@ -26,11 +26,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="GasProbeTrav.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="GasProbeTrav.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/GasProbeTrav.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2261">
-              <caret line="145" column="8" selection-start-line="145" selection-start-column="8" selection-end-line="145" selection-end-column="8" />
+            <state relative-caret-position="-452">
+              <caret line="187" selection-start-line="187" selection-end-line="187" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -38,11 +38,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="ImageProcessing.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="ImageProcessing.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ImageProcessing.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="121">
-              <caret line="366" column="8" selection-start-line="366" selection-start-column="8" selection-end-line="366" selection-end-column="8" />
+            <state relative-caret-position="-661">
+              <caret line="390" column="116" selection-start-line="390" selection-start-column="116" selection-end-line="390" selection-end-column="116" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -53,7 +53,7 @@
       <file leaf-file-name="figure.py" pinned="false" current-in-tab="false">
         <entry file="file://C:/Python37/Lib/site-packages/matplotlib/figure.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="180">
+            <state relative-caret-position="2346">
               <caret line="162" selection-start-line="162" selection-end-line="162" />
             </state>
           </provider>
@@ -62,7 +62,7 @@
       <file leaf-file-name="pyplot.py" pinned="false" current-in-tab="false">
         <entry file="file://C:/Python37/Lib/site-packages/matplotlib/pyplot.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="180">
+            <state relative-caret-position="38998">
               <caret line="2301" selection-start-line="2301" selection-end-line="2301" />
             </state>
           </provider>
@@ -89,7 +89,7 @@
       <file leaf-file-name="ExhaustEmissions.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ExhaustEmissions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2890">
+            <state relative-caret-position="-741">
               <caret line="178" column="29" selection-start-line="172" selection-start-column="12" selection-end-line="178" selection-end-column="29" />
             </state>
           </provider>
@@ -98,7 +98,7 @@
       <file leaf-file-name="TC_Trav.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/TC_Trav.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="5899">
+            <state relative-caret-position="6103">
               <caret line="359" column="41" selection-start-line="359" selection-start-column="41" selection-end-line="359" selection-end-column="41" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
@@ -136,8 +136,8 @@
         <option value="$PROJECT_DIR$/Profiles_intercase.py" />
         <option value="$PROJECT_DIR$/ExhaustEmissions.py" />
         <option value="$PROJECT_DIR$/TC_Trav.py" />
-        <option value="$PROJECT_DIR$/GasProbeTrav.py" />
         <option value="$PROJECT_DIR$/ImageProcessing.py" />
+        <option value="$PROJECT_DIR$/GasProbeTrav.py" />
       </list>
     </option>
   </component>
@@ -276,13 +276,13 @@
       <window_info content_ui="combo" id="Project" order="1" sideWeight="0.4945534" weight="0.24920969" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.3845316" />
       <window_info anchor="bottom" id="Version Control" order="7" />
       <window_info anchor="bottom" id="Python Console" order="7" weight="0.32897604" />
-      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.3845316" />
-      <window_info active="true" id="Structure" order="2" sideWeight="0.5054466" side_tool="true" visible="true" weight="0.12908325" />
+      <window_info id="Structure" order="2" sideWeight="0.5054466" side_tool="true" visible="true" weight="0.12908325" />
       <window_info anchor="bottom" id="Terminal" order="7" />
-      <window_info id="Favorites" order="0" side_tool="true" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.36710238" />
+      <window_info id="Favorites" order="0" side_tool="true" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -299,67 +299,67 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/TC_Trav.py</url>
+          <url />
           <line>136</line>
           <option name="timeStamp" value="9" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/TC_Trav.py</url>
+          <url />
           <line>143</line>
           <option name="timeStamp" value="10" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/ImageProcessing.py</url>
-          <line>327</line>
+          <url />
+          <line>332</line>
           <option name="timeStamp" value="25" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/ImageProcessing.py</url>
-          <line>316</line>
-          <option name="timeStamp" value="27" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/ImageProcessing.py</url>
-          <line>119</line>
+          <url />
+          <line>120</line>
           <option name="timeStamp" value="28" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/ImageProcessing.py</url>
-          <line>442</line>
+          <url />
+          <line>447</line>
           <option name="timeStamp" value="29" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/ExhaustEmissions.py</url>
+          <url />
           <line>88</line>
           <option name="timeStamp" value="35" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/ExhaustEmissions.py</url>
+          <url />
           <line>200</line>
           <option name="timeStamp" value="37" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/ExhaustEmissions.py</url>
+          <url />
           <line>142</line>
           <option name="timeStamp" value="38" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/GasProbeTrav.py</url>
-          <line>203</line>
-          <option name="timeStamp" value="39" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/GasProbeTrav.py</url>
-          <line>195</line>
-          <option name="timeStamp" value="43" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/ImageProcessing.py</url>
-          <line>193</line>
+          <url />
+          <line>194</line>
           <option name="timeStamp" value="45" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url />
+          <line>330</line>
+          <option name="timeStamp" value="46" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url />
+          <line>229</line>
+          <option name="timeStamp" value="51" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url />
+          <line>206</line>
+          <option name="timeStamp" value="53" />
+        </line-breakpoint>
       </breakpoints>
-      <option name="time" value="46" />
+      <option name="time" value="56" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
@@ -377,9 +377,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="493">
           <caret line="31" column="112" selection-start-line="31" selection-start-column="86" selection-end-line="31" selection-end-column="112" />
-          <folding>
-            <element signature="e#0#27#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -455,9 +452,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="493">
           <caret line="31" column="112" selection-start-line="31" selection-start-column="86" selection-end-line="31" selection-end-column="112" />
-          <folding>
-            <element signature="e#0#27#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -519,9 +513,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="493">
           <caret line="31" column="112" selection-start-line="31" selection-start-column="86" selection-end-line="31" selection-end-column="112" />
-          <folding>
-            <element signature="e#0#27#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -573,9 +564,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="493">
           <caret line="31" column="112" selection-start-line="31" selection-start-column="86" selection-end-line="31" selection-end-column="112" />
-          <folding>
-            <element signature="e#0#27#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -620,9 +608,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="493">
           <caret line="31" column="112" selection-start-line="31" selection-start-column="86" selection-end-line="31" selection-end-column="112" />
-          <folding>
-            <element signature="e#0#27#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -674,9 +659,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="493">
           <caret line="31" column="112" selection-start-line="31" selection-start-column="86" selection-end-line="31" selection-end-column="112" />
-          <folding>
-            <element signature="e#0#27#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -724,7 +706,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Profiles_intercase.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="8721">
+        <state relative-caret-position="8925">
           <caret line="525" column="8" selection-start-line="525" selection-start-column="8" selection-end-line="525" selection-end-column="8" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
@@ -755,25 +737,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/TC_Trav.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5899">
+        <state relative-caret-position="6103">
           <caret line="359" column="41" selection-start-line="359" selection-start-column="41" selection-end-line="359" selection-end-column="41" />
-          <folding>
-            <element signature="e#0#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ExhaustEmissions.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2890">
-          <caret line="178" column="29" selection-start-line="172" selection-start-column="12" selection-end-line="178" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/GasProbeTrav.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2261">
-          <caret line="145" column="8" selection-start-line="145" selection-start-column="8" selection-end-line="145" selection-end-column="8" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>
@@ -782,22 +747,39 @@
     </entry>
     <entry file="file://C:/Python37/Lib/site-packages/matplotlib/figure.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
+        <state relative-caret-position="2346">
           <caret line="162" selection-start-line="162" selection-end-line="162" />
         </state>
       </provider>
     </entry>
     <entry file="file://C:/Python37/Lib/site-packages/matplotlib/pyplot.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
+        <state relative-caret-position="38998">
           <caret line="2301" selection-start-line="2301" selection-end-line="2301" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ExhaustEmissions.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-741">
+          <caret line="178" column="29" selection-start-line="172" selection-start-column="12" selection-end-line="178" selection-end-column="29" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ImageProcessing.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="121">
-          <caret line="366" column="8" selection-start-line="366" selection-start-column="8" selection-end-line="366" selection-end-column="8" />
+        <state relative-caret-position="-661">
+          <caret line="390" column="116" selection-start-line="390" selection-start-column="116" selection-end-line="390" selection-end-column="116" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/GasProbeTrav.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-452">
+          <caret line="187" selection-start-line="187" selection-end-line="187" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>

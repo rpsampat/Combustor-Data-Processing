@@ -179,11 +179,12 @@ class GasProbeTrav:
                     index2 = name.index('_GA')
                     xlegend.append("$\phi$="+name[index1:index2])
                     xpos = dataset[name]['x_pos']
+                    r_chamber = 103.25
                     wallpos = np.min(xpos)
-                    xpos = xpos-wallpos
+                    xpos = (xpos-wallpos)#/r_chamber
                     dx = np.max(np.abs(np.diff(xpos)))
                     N_kernel = int(12.0/dx)
-                    xpos = np.convolve(xpos, np.ones(N_kernel) / N_kernel, mode='valid')
+                    xpos = np.convolve(xpos, np.ones(N_kernel) / N_kernel, mode='valid')/r_chamber
                     X_CO = np.convolve(dataset[name]['CO'], np.ones(N_kernel) / N_kernel, mode='valid')*1e-6
                     X_CO2 = np.convolve(dataset[name]['CO2'], np.ones(N_kernel) / N_kernel, mode='valid')*1e-2
                     X_NO = np.convolve(dataset[name]['NO'], np.ones(N_kernel) / N_kernel, mode='valid')*1e-6
@@ -305,7 +306,7 @@ class GasProbeTrav:
         conditions = dataset.keys()
         #port=2
         #H2_perc = 80
-        identifiers = ['Port','_phi_0.8','H2_'+str(H2_perc)+'_']
+        identifiers = ['Port','_phi_','H2_'+str(H2_perc)+'_']
         phi_list=[0.3,0.6,0.8,1.0]
         port_list = [2,3,5]
         ident_excl = ['N2_8','_CO2_']
