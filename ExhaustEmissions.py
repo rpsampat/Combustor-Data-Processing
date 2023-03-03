@@ -90,25 +90,24 @@ class ExhaustEmissions:
         with open(self.drive + self.folder + "Unified_dataset_ExhaustEmissions", 'wb') as file:
             pickle.dump(data, file, pickle.HIGHEST_PROTOCOL)
 
-    def spec_corr(self,X_O2, X_CO,X_CO2,X_CH4, X_NO, X_NO2, mdot_CH4, mdot_H2, mdot_air_main, mdot_air_pilot):
+    def spec_corr(self,X_O2, X_CO,X_CO2,X_CH4, X_NO, X_NO2,excess_o2, n_o2_calc, n_o2_excess, n_t_dry, n_h2o):
         x_O2 = 15 # % O2 corrected
-        X_CO_corr = (X_CO*(1-x_O2/100.0)/(1-X_O2))*1e6 # dry at x% O2 (ppm)
-        X_CO2_corr = (X_CO2 * (1 - x_O2 / 100.0) / (1 - X_O2))*1e2 # dry at x% O2 (%)
-        X_CH4_corr = (X_CH4 * (1 - x_O2 / 100.0) / (1 - X_O2))*1e6 # dry at x% O2 (ppm)
-        n_t_dry = (mdot_CH4 / self.MW_CH4) / (X_CO + X_CO2 + X_CH4)
-        n_h2 = mdot_H2 / self.MW_H2
-        mdot_air_tot = mdot_air_main + mdot_air_pilot
-        n_h2o = n_h2 + 2 * X_CO * n_t_dry + 2 * X_CO2 * n_t_dry
         n_t_wet = n_t_dry + n_h2o
-        n_corr = n_t_dry/(1-x_O2/100.0)
+        X_O2_red_dry = n_o2_calc/(n_t_dry-4.76*n_o2_excess)
+        X_O2_red_wet = n_o2_calc/(n_t_wet-4.76*n_o2_excess)
+        corr_fact_dry = (n_t_dry/(n_t_dry-4.76*n_o2_excess))*(20.9-(x_O2/100.0))/(20.9-X_O2_red_dry)
+        corr_fact_wet = (n_t_wet / (n_t_wet - 4.76 * n_o2_excess)) * (20.9 - (x_O2 / 100.0)) / (20.9 - X_O2_red_wet)
+        X_CO_corr = X_CO*corr_fact_dry*1e6 # dry at x% O2 (ppm)
+        X_CO2_corr = X_CO2 * corr_fact_dry*1e2 # dry at x% O2 (%)
+        X_CH4_corr = X_CH4 * corr_fact_dry*1e6 # dry at x% O2 (ppm)
         wet = 'y'
         if wet == 'y':
-            X_NO_corr = (X_NO * (1 - x_O2 / 100.0) / (1 - X_O2)) * 1e6  # (X_NO*n_t_wet/n_corr)*1e6 # dry at x% O2 (ppm)
-            X_NO2_corr = (X_NO2 * (1 - x_O2 / 100.0) / (
-                        1 - X_O2)) * 1e6  # (X_NO2 * n_t_wet / n_corr)*1e6 # dry at x% O2 (ppm)
+            X_NO_corr = X_NO * corr_fact_wet * 1e6  # (X_NO*n_t_wet/n_corr)*1e6 # dry at x% O2 (ppm)
+            X_NO2_corr = X_NO2 * corr_fact_wet * 1e6  # (X_NO2 * n_t_wet / n_corr)*1e6 # dry at x% O2 (ppm)
         else:
-            X_NO_corr = (X_NO * n_t_wet / n_corr) * 1e6  # dry at x% O2 (ppm)
-            X_NO2_corr = (X_NO2 * n_t_wet / n_corr) * 1e6  # dry at x% O2 (ppm)
+            X_NO_corr = (X_NO * corr_fact_dry) * 1e6  # dry at x% O2 (ppm)
+            X_NO2_corr = (X_NO2 * corr_fact_dry) * 1e6  # dry at x% O2 (ppm)
+
         return X_CO_corr, X_CO2_corr, X_CH4_corr, X_NO_corr, X_NO2_corr
 
 
@@ -117,7 +116,7 @@ class ExhaustEmissions:
 
 
 
-    def excess_O2(self,X_O2, X_CO,X_CO2,X_CH4, mdot_CH4, mdot_H2, mdot_air_main, mdot_air_pilot):
+    def excess_O2_archive(self,X_O2, X_CO,X_CO2,X_CH4, mdot_CH4, mdot_H2, mdot_air_main, mdot_air_pilot):
         """
         Calculate excess O2 % based on measured dry values of carbon species, inlet fuel and air mass flows.
         :param X_O2:
@@ -142,6 +141,39 @@ class ExhaustEmissions:
 
         return excess_o2
 
+    def excess_O2(self,X_O2, X_CO,X_CO2,X_CH4, mdot_CH4, mdot_H2, mdot_air_main, mdot_air_pilot):
+        """
+        Calculate excess O2 % based on measured dry values of carbon species, inlet fuel and air mass flows.
+        :param X_O2:
+        :param X_CO:
+        :param X_CO2:
+        :param X_CH4:
+        :param mdot_CH4:
+        :param mdot_H2:
+        :param mdot_air_main:
+        :param mdot_air_pilot:
+        :return: excess_o2, n_o2_calc, n_o2_excess, n_t_dry, n_h2o
+        """
+        n_h2_in = mdot_H2 / self.MW_H2
+        n_ch4_in = mdot_CH4/self.MW_CH4
+        mdot_air_tot = mdot_air_main + mdot_air_pilot
+        n_o2_in = (mdot_air_tot/self.MW_air)/4.76
+        c_denom = X_CO+X_CO2+X_CH4
+        try:
+            c_ratio = (X_CO2/(X_CO+X_CO2+X_CH4))
+        except:
+            c_ratio = 0.0
+        n_o2_calc = (2.0*n_o2_in-2.0*n_ch4_in*(1.0+c_ratio)-n_h2_in)/2.0
+        n_n2_calc = 3.76*n_o2_in
+        n_o2_excess = (n_o2_calc*(1-X_O2)-X_O2*(n_ch4_in+n_n2_calc))/(4.76*X_O2-1.0)
+        n_t_dry = n_ch4_in+n_o2_calc+n_n2_calc+4.76*n_o2_excess
+        n_ch4_meas = X_CH4*n_t_dry
+        n_h2o = n_h2_in+2*n_ch4_in-2*n_ch4_meas
+
+        excess_o2 = 100.0*(n_o2_excess)/n_o2_calc
+
+        return excess_o2, n_o2_calc, n_o2_excess, n_t_dry, n_h2o
+
     def data_plot(self):
         pathsave = self.drive + self.folder + "/Results_wet/"
         with open(self.drive + self.folder + "Unified_dataset_ExhaustEmissions", 'rb') as f:
@@ -152,7 +184,7 @@ class ExhaustEmissions:
         H2_perc = 80
         identifiers = ['phi', 'H2']
         H2_perc_list = [0,10,50,80,100]
-        phi_list = [0.3, 0.6, 0.8, 1.0]
+        phi_list = [0.3, 0.35,0.5,0.6,0.7, 0.8,0.9, 1.0]
         ident_excl = ['N2_', '_CO2_','_turbgrid']
         marker_list = ["o", "x", "x"]
         color_list = ['m', 'r', 'k', 'g','b']
@@ -198,9 +230,10 @@ class ExhaustEmissions:
                         mdot_air_pilot = (np.mean(dataset[name]['mdot_pilotair']*1.1381-0.6213))*self.rho_n_air/60000.0
                         mdot_ch4 = np.mean(dataset[name]['mdot_ch4'])*self.rho_n_CH4/60000.0
                         mdot_h2 = np.mean(dataset[name]['mdot_h2'])*self.rho_n_H2/60000.0
-                        excess_o2 = self.excess_O2(X_O2, X_CO,X_CO2,X_CH4, mdot_ch4, mdot_h2, mdot_air_main, mdot_air_pilot)
+                        excess_o2, n_o2_calc, n_o2_excess, n_t_dry, n_h2o = \
+                            self.excess_O2(X_O2, X_CO,X_CO2,X_CH4, mdot_ch4, mdot_h2, mdot_air_main, mdot_air_pilot)
                         X_CO_corr, X_CO2_corr, X_CH4_corr, X_NO_corr, X_NO2_corr =\
-                            self.spec_corr(X_O2, X_CO,X_CO2,X_CH4, X_NO, X_NO2, mdot_ch4, mdot_h2, mdot_air_main, mdot_air_pilot)
+                            self.spec_corr(X_O2, X_CO,X_CO2,X_CH4, X_NO, X_NO2, excess_o2, n_o2_calc, n_o2_excess, n_t_dry, n_h2o)
                         X_CO_list.append(X_CO_corr)
                         X_CO2_list.append(X_CO2_corr)
                         X_NO_list.append(X_NO_corr)
@@ -228,56 +261,64 @@ class ExhaustEmissions:
             return 0
 
         mkr_sz_leg = 1.0
-        ax.legend(xlegend, markerscale=mkr_sz_leg)
+        leg_title = 'H$_2$ %'
+        ax.legend(xlegend, markerscale=mkr_sz_leg, title= leg_title)
         ax.set_ylabel("CO dry at 15% O2 (ppm)")
         ax.set_xlabel("Equivalence Ratio ($\phi$)")
         #ax.set_yscale('log')
         fig_name = "CO_exhaust_quartz"+ "_vs_phi"
+        fig.tight_layout()
         fig.savefig(pathsave + fig_name + '.pdf')
         fig.savefig(pathsave + fig_name + '.png')
 
-        ax1.legend(xlegend, markerscale=mkr_sz_leg)
+        ax1.legend(xlegend, markerscale=mkr_sz_leg, title= leg_title)
         ax1.set_ylabel("CO2 dry at 15% O2 (%)")
         ax1.set_xlabel("Equivalence Ratio ($\phi$)")
         fig_name = "CO2_exhaust_quartz" + "_vs_phi"
+        fig1.tight_layout()
         fig1.savefig(pathsave + fig_name + '.pdf')
         fig1.savefig(pathsave + fig_name + '.png')
 
-        ax2.legend(xlegend, markerscale=mkr_sz_leg)
+        ax2.legend(xlegend, markerscale=mkr_sz_leg, title= leg_title)
         ax2.set_ylabel("NO wet at 15% O2 (ppm)")
         ax2.set_xlabel("Equivalence Ratio ($\phi$)")
         fig_name = "NO_exhaust_quartz" + "_vs_phi"
+        fig2.tight_layout()
         fig2.savefig(pathsave + fig_name + '.pdf')
         fig2.savefig(pathsave + fig_name + '.png')
 
-        ax3.legend(xlegend, markerscale=mkr_sz_leg)
+        ax3.legend(xlegend, markerscale=mkr_sz_leg, title= leg_title)
         ax3.set_ylabel("NO2 wet at 15% O2 (ppm)")
         ax3.set_xlabel("Equivalence Ratio ($\phi$)")
         fig_name = "NO2_exhaust_quartz" + "_vs_phi"
+        fig3.tight_layout()
         fig3.savefig(pathsave + fig_name + '.pdf')
         fig3.savefig(pathsave + fig_name + '.png')
 
-        ax4.legend(xlegend, markerscale=mkr_sz_leg)
+        ax4.legend(xlegend, markerscale=mkr_sz_leg, title= leg_title)
         ax4.set_ylabel("O2 (%)")
         ax4.set_xlabel("Equivalence Ratio ($\phi$)")
         fig_name = "O2_exhaust_quartz" + "_vs_phi"
+        fig4.tight_layout()
         fig4.savefig(pathsave + fig_name + '.pdf')
         fig4.savefig(pathsave + fig_name + '.png')
 
-        ax5.legend(xlegend, markerscale=mkr_sz_leg)
+        ax5.legend(xlegend, markerscale=mkr_sz_leg, title= leg_title)
         ax5.set_ylabel("CH4 dry at 15% O2 (ppm)")
         ax5.set_xlabel("Equivalence Ratio ($\phi$)")
         ax5.set_yscale('log')
         fig_name = "CH4_exhaust_quartz" + "_vs_phi"
+        fig5.tight_layout()
         fig5.savefig(pathsave + fig_name + '.pdf')
         fig5.savefig(pathsave + fig_name + '.png')
 
-        """ax6.legend(xlegend, markerscale=mkr_sz_leg)
+        ax6.legend(xlegend, markerscale=mkr_sz_leg, title= leg_title)
         ax6.set_ylabel("Excess O$_2$ (%)")
         ax6.set_xlabel("Equivalence Ratio ($\phi$)")
         fig_name = "O2_excess_exhaust_quartz" + "_vs_phi"
+        fig6.tight_layout()
         fig6.savefig(pathsave + fig_name + '.pdf')
-        fig6.savefig(pathsave + fig_name + '.png')"""
+        fig6.savefig(pathsave + fig_name + '.png')
 
 if __name__=="__main__":
     EE = ExhaustEmissions()

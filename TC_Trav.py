@@ -11,6 +11,7 @@ from mpl_toolkits import axisartist
 from labview_extract import DataExtract
 from nptdms import TdmsFile
 from scandir import scandir
+import ExhaustEmissions as ExhEmiss
 
 
 class TC_Trav:
@@ -220,7 +221,7 @@ class TC_Trav:
 
 
 
-    def excess_O2(self,X_O2, X_CO,X_CO2,X_CH4, mdot_CH4, mdot_H2, mdot_air_main, mdot_air_pilot):
+    def excess_O2_archive(self,X_O2, X_CO,X_CO2,X_CH4, mdot_CH4, mdot_H2, mdot_air_main, mdot_air_pilot):
         """
         Calculate excess O2 % based on measured dry values of carbon species, inlet fuel and air mass flows.
         :param X_O2:
@@ -255,7 +256,7 @@ class TC_Trav:
         H2_perc = 80
         identifiers = ['phi', 'H2']
         H2_perc_list = [0,10,50,80,100]
-        phi_list = [0.3, 0.6, 0.8, 1.0]
+        phi_list = [0.3, 0.35,0.5,0.6,0.7, 0.8,0.9, 1.0]
         ident_excl = ['N2_', '_CO2_','_turbgrid']
         marker_list = ["o", "x", "x"]
         color_list = ['m', 'r', 'k', 'g','b']
@@ -269,6 +270,7 @@ class TC_Trav:
         fig5, ax5 = plt.subplots()
         fig6, ax6 = plt.subplots()
         mkr_sz = 30
+        EE = ExhEmiss.ExhaustEmissions()
         for perc in H2_perc_list:
             id_list0 = np.append(identifiers, '_H2_' + str(perc)+'_')
             xlegend.append(str(perc)+"%")
@@ -301,9 +303,10 @@ class TC_Trav:
                         mdot_air_pilot = (np.mean(dataset[name]['mdot_pilotair'])*1.1381-0.6213)*self.rho_n_air/60000.0
                         mdot_ch4 = np.mean(dataset[name]['mdot_ch4'])*self.rho_n_CH4/60000.0
                         mdot_h2 = np.mean(dataset[name]['mdot_h2'])*self.rho_n_H2/60000.0
-                        excess_o2 = self.excess_O2(X_O2, X_CO,X_CO2,X_CH4, mdot_ch4, mdot_h2, mdot_air_main, mdot_air_pilot)
-                        X_CO_corr, X_CO2_corr, X_CH4_corr, X_NO_corr, X_NO2_corr =\
-                            self.spec_corr(X_O2, X_CO,X_CO2,X_CH4, X_NO, X_NO2, mdot_ch4, mdot_h2, mdot_air_main, mdot_air_pilot)
+                        excess_o2, n_o2_calc, n_o2_excess, n_t_dry, n_h2o = EE.excess_O2(X_O2, X_CO,X_CO2,X_CH4, mdot_ch4, mdot_h2, mdot_air_main, mdot_air_pilot)
+                        X_CO_corr, X_CO2_corr, X_CH4_corr, X_NO_corr, X_NO2_corr = \
+                            EE.spec_corr(X_O2, X_CO, X_CO2, X_CH4, X_NO, X_NO2, excess_o2, n_o2_calc, n_o2_excess,
+                                           n_t_dry, n_h2o)
                         X_CO_list.append(X_CO_corr)
                         X_CO2_list.append(X_CO2_corr)
                         X_NO_list.append(X_NO_corr)
@@ -331,56 +334,64 @@ class TC_Trav:
             return 0
 
         mkr_sz_leg = 1.0
-        ax.legend(xlegend, markerscale=mkr_sz_leg)
+        leg_title = 'H$_2$ %'
+        ax.legend(xlegend, markerscale=mkr_sz_leg, title= leg_title)
         ax.set_ylabel("CO dry at 15% O2 (ppm)")
         ax.set_xlabel("Equivalence Ratio ($\phi$)")
         #ax.set_yscale('log')
-        fig_name = "CO_exhaust_quartz"+ "_vs_phi"
+        fig_name = "CO_exhaust_steel"+ "_vs_phi"
+        fig.tight_layout()
         fig.savefig(pathsave + fig_name + '.pdf')
         fig.savefig(pathsave + fig_name + '.png')
 
-        ax1.legend(xlegend, markerscale=mkr_sz_leg)
+        ax1.legend(xlegend, markerscale=mkr_sz_leg, title= leg_title)
         ax1.set_ylabel("CO2 dry at 15% O2 (%)")
         ax1.set_xlabel("Equivalence Ratio ($\phi$)")
-        fig_name = "CO2_exhaust_quartz" + "_vs_phi"
+        fig_name = "CO2_exhaust_steel" + "_vs_phi"
+        fig1.tight_layout()
         fig1.savefig(pathsave + fig_name + '.pdf')
         fig1.savefig(pathsave + fig_name + '.png')
 
-        ax2.legend(xlegend, markerscale=mkr_sz_leg)
+        ax2.legend(xlegend, markerscale=mkr_sz_leg, title= leg_title)
         ax2.set_ylabel("NO wet at 15% O2 (ppm)")
         ax2.set_xlabel("Equivalence Ratio ($\phi$)")
-        fig_name = "NO_exhaust_quartz" + "_vs_phi"
+        fig_name = "NO_exhaust_steel" + "_vs_phi"
+        fig2.tight_layout()
         fig2.savefig(pathsave + fig_name + '.pdf')
         fig2.savefig(pathsave + fig_name + '.png')
 
-        ax3.legend(xlegend, markerscale=mkr_sz_leg)
+        ax3.legend(xlegend, markerscale=mkr_sz_leg, title= leg_title)
         ax3.set_ylabel("NO2 wet at 15% O2 (ppm)")
         ax3.set_xlabel("Equivalence Ratio ($\phi$)")
-        fig_name = "NO2_exhaust_quartz" + "_vs_phi"
+        fig_name = "NO2_exhaust_steel" + "_vs_phi"
+        fig3.tight_layout()
         fig3.savefig(pathsave + fig_name + '.pdf')
         fig3.savefig(pathsave + fig_name + '.png')
 
-        ax4.legend(xlegend, markerscale=mkr_sz_leg)
+        ax4.legend(xlegend, markerscale=mkr_sz_leg, title= leg_title)
         ax4.set_ylabel("O2 (%)")
         ax4.set_xlabel("Equivalence Ratio ($\phi$)")
-        fig_name = "O2_exhaust_quartz" + "_vs_phi"
+        fig_name = "O2_exhaust_steel" + "_vs_phi"
+        fig4.tight_layout()
         fig4.savefig(pathsave + fig_name + '.pdf')
         fig4.savefig(pathsave + fig_name + '.png')
 
-        ax5.legend(xlegend, markerscale=mkr_sz_leg)
+        ax5.legend(xlegend, markerscale=mkr_sz_leg, title= leg_title)
         ax5.set_ylabel("CH4 dry at 15% O2 (ppm)")
         ax5.set_xlabel("Equivalence Ratio ($\phi$)")
         ax5.set_yscale('log')
-        fig_name = "CH4_exhaust_quartz" + "_vs_phi"
+        fig_name = "CH4_exhaust_steel" + "_vs_phi"
+        fig5.tight_layout()
         fig5.savefig(pathsave + fig_name + '.pdf')
         fig5.savefig(pathsave + fig_name + '.png')
 
-        """ax6.legend(xlegend, markerscale=mkr_sz_leg)
+        ax6.legend(xlegend, markerscale=mkr_sz_leg, title= leg_title)
         ax6.set_ylabel("Excess O$_2$ (%)")
         ax6.set_xlabel("Equivalence Ratio ($\phi$)")
-        fig_name = "O2_excess_exhaust_quartz" + "_vs_phi"
+        fig_name = "O2_excess_exhaust_steel" + "_vs_phi"
+        fig6.tight_layout()
         fig6.savefig(pathsave + fig_name + '.pdf')
-        fig6.savefig(pathsave + fig_name + '.png')"""
+        fig6.savefig(pathsave + fig_name + '.png')
 
 
 

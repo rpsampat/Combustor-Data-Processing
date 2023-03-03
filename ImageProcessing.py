@@ -59,9 +59,9 @@ class ImageProcessing:
             check_id_exclude = [(x in subdir) for x in identifier_exclude]
             check_id_optional = [(x in subdir) for x in identifier_optional]
             isfalse = False in check_id
-            isfalse_exclude = False in check_id_exclude
+            isTrue_exclude = True in check_id_exclude
             isTrue = True in check_id_optional
-            if not(isfalse) and isfalse_exclude and isTrue:
+            if not(isfalse) and not(isTrue_exclude) and isTrue:
                 sub_list.append(subdir)
 
         print(sub_list)
@@ -85,6 +85,8 @@ class ImageProcessing:
             # Iterating through files for a particular case
             count = 0
             for name in filenames:
+                if "Cluster_stats" in name:
+                    continue
                 count += 1
                 img = cv2.imread(path_file + name)  # bgr
 
@@ -124,6 +126,8 @@ class ImageProcessing:
             self.save_image_named(avg_img, 'avg_'+str(count), path_file + 'Variance/')
             count = 0
             for name in filenames:
+                if "Cluster_stats" in name:
+                    continue
                 count += 1
                 img = cv2.imread(path_file + name)  # bgr
                 img[:, :, 1] = np.zeros((shp[0], shp[1]))
@@ -166,7 +170,7 @@ class ImageProcessing:
         folder = sub_list[0]+ "/" + "Variance/"
         with open(path + folder + 'avg_146.jpg', 'rb') as file:
             img = plt.imread(file)
-        img_blank =img*0
+        img_blank =img*0+255
 
         for i in range(len(H2_perc)):
             for j in range(len(phi)):
@@ -190,9 +194,11 @@ class ImageProcessing:
                     for nm in filenames:
                         if '.jpg' in nm:
                             count_files+=1
+                    if count_files<5:
+                        raise Exception
                     folder = folder + "/" + "Variance/"
 
-                    with open(path+ folder + 'stdv_'+str(count_files)+'.jpg', 'rb') as file:
+                    with open(path+ folder + 'avg_'+str(count_files)+'.jpg', 'rb') as file:
                         img = plt.imread(file)
                     img_thresh,img_gray = self.image_enhancement(img,False,220)
                     img_normalized = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX) # image normalisation to improve visibility of final plot
@@ -211,7 +217,7 @@ class ImageProcessing:
 
 
                 except:
-                    ax[j, i].imshow(img_blank, aspect='auto')  # , aspect='auto')#[0:-48,85:-1,:]
+                    ax[j, i].imshow(img_blank, cmap='gray', aspect='auto')  # , aspect='auto')#[0:-48,85:-1,:]
                     ax[j, i].axis('off')
                     ax[j, i].set_frame_on(False)
                     if j==0:
@@ -225,7 +231,7 @@ class ImageProcessing:
                         ax[j, i].yaxis.set_tick_params(labelleft=False)
                     continue
         #figure.tight_layout()
-        plt.savefig(path + 'stdv_comparison.png', bbox_inches='tight')
+        plt.savefig(path + 'avg_comparison.png', bbox_inches='tight')
         plt.show()
 
     def cluster(self):
@@ -234,13 +240,16 @@ class ImageProcessing:
         the raw images directly, depending on the folder chosen and the name condition.
         :return:
         """
-        dict_pdf={'volume':[],'x_com':[],'y_com':[],'Lxx':[],'Lyy':[],'xmin':[]}
+        dict_pdf={'volume':[],'x_com':[],'y_com':[],'Lxx':[],'Lyy':[],'xmin':[],'spacing':[],'hydrau_dia':[],'aspect_ratio':[]}
         path = self.drive + self.folder
         #file_loc = path+'NV100_H2_100_phi_1.0/'
         #path = self.drive + self.folder
         sub_list = self.image_dir_list()  # ['NV100_H2_0_phi_0.6','NV100_H2_10_phi_0.6','NV100_H2_50_phi_0.6','NV100_H2_80_phi_0.6','NV100_H2_100_phi_0.6']#
         exception = 0
         plot_cluster_image='n'
+        settings={0:{'thresh':60,'eps':8.0,'minpts':20},10:{'thresh':60,'eps':8.0,'minpts':20},
+                  50:{'thresh':60,'eps':8.0,'minpts':150},80:{'thresh':20,'eps':8.0,'minpts':100},
+                  100:{'thresh':50,'eps':8.0,'minpts':125}}
         for subdir in sub_list:
             file_loc = path + subdir + '/' + 'Variance/'
             print(file_loc)
@@ -251,15 +260,21 @@ class ImageProcessing:
             """if plot_cluster_image=='n':
                 if True in check_clust:
                     continue"""
+            for ind in settings.keys():
+                check_id = '_H2_'+str(ind)
+                if check_id in subdir:
+                    break
             # Iterating through files for a particular case
             count = 0
             for name in filenames:
-                count += 1
-                print("Count=",count)
                 """if count ==6:
                     break"""
                 if not ('var' in name):
+                    #if "Cluster_stats" in name:
+                     #   os.remove(file_loc+name)
                     continue
+                count += 1
+                print("Count=", count)
                 """
                 The blue componenet of the image is chosen. Next it is converted to grey scale and then
                 normalised by its own min-max values.
@@ -283,7 +298,7 @@ class ImageProcessing:
                     ax.imshow(img,cmap='gray')
                     fig.savefig(path + 'vargray_' + subdir + '_' + name, bbox_inches='tight')
                 #plt.show()
-                img_ind = np.where(img_normalized >30)
+                img_ind = np.where(img_normalized >settings[ind]['thresh'])
                 #self.edge_detect(img)
                 # meshgrid
                 shp = img.shape
@@ -303,8 +318,8 @@ class ImageProcessing:
                 Z = np.reshape(dbscan_arr,[-1, 2])
                 #print("Z shape =",Z.shape)
 
-                eps=8.0
-                ms=150
+                eps=settings[ind]['eps']
+                ms=settings[ind]['minpts']
                 db = DBSCAN(eps=eps, min_samples=ms).fit(Z)#, algorithm='ball_tree'
                 #km = KMeans(n_clusters=10).fit(Z)
                 cluster_ind = np.where(db.labels_>=0)[0]
@@ -319,6 +334,7 @@ class ImageProcessing:
                     #plt.show()
                 #print("Unique clusters=",num_cluster)
                 #print("Unique counts=",unique_counts)
+                core_samp = list(db.core_sample_indices_)
                 for i in range(len(num_cluster)):
                     # iterating over each cluster detected in this image
                     #ignoring cluster id -1
@@ -328,22 +344,41 @@ class ImageProcessing:
                     clust = unique_counts[i]
                     dict_pdf['volume'].append(clust)
                     cluster_ind = np.where(db.labels_== clust_id)
+                    edge_ind = set(list(cluster_ind[0]))-set(core_samp)
                     xval = img_ind[1][cluster_ind] # xlocation of all points in this cluster
-                    yval = img_ind[0][cluster_ind] # ylocation of all points in this cluster
-                    dict_pdf['x_com'].append(np.mean(xval))
-                    dict_pdf['y_com'].append(np.mean(yval))
+                    yval = img_ind[0][cluster_ind] # ylocation of all points in this
+                    x_loc = np.mean(xval)
+                    y_loc = np.mean(yval)
+                    dict_pdf['x_com'].append(x_loc)
+                    dict_pdf['y_com'].append(y_loc)
                     Lxx = np.max(xval)-np.min(xval)
                     Lyy = np.max(yval)-np.min(yval)
                     dict_pdf['Lxx'].append(Lxx)
                     dict_pdf['Lyy'].append(Lyy)
+                    try:
+                        dict_pdf['aspect_ratio'].append(float(Lxx)/float(Lyy))
+                    except:
+                        dict_pdf['aspect_ratio'].append(float(Lxx) / 1.0)
+                    #dict_pdf['hydrau_dia'].append(float(clust) / float(len(edge_ind)))
                     dict_pdf['xmin'].append(np.min(xval))
+                    for j in range(len(num_cluster)):
+                        if j==i:
+                            continue
+                        clust_id2 = num_cluster[j]
+                        cluster_ind2 = np.where(db.labels_== clust_id2)
+                        xval2 = img_ind[1][cluster_ind2]  # xlocation of all points in this cluster
+                        yval2 = img_ind[0][cluster_ind2]  # ylocation of all points in this cluster
+                        x_loc2 = np.mean(xval2)
+                        y_loc2 = np.mean(yval2)
+                        spacing = math.sqrt((x_loc-x_loc2)**2.0 + (y_loc-y_loc2)**2.0)
+                        dict_pdf["spacing"].append(spacing)
 
 
 
             """plt.scatter(img_ind[1][cluster_ind],img_ind[0][cluster_ind],c=db.labels_[cluster_ind],s=1.0)
             plt.colorbar()"""
             #plt.imshow(np.uint8(db.labels_))
-            with open(file_loc + "Cluster_stats_"+str(count), 'wb') as file:
+            with open(file_loc + "Cluster_stats2_"+str(count), 'wb') as file:
                 pickle.dump(dict_pdf, file, pickle.HIGHEST_PROTOCOL)
             """fig,ax= plt.subplots()
             hist, bin_edge = np.histogram(dict_pdf['volume'],bins=50)
@@ -399,22 +434,27 @@ class ImageProcessing:
                 try:
                     filenames = next(os.walk(path + folder))[2]
                     for nm in filenames:
-                        if 'Cluster_stats' in nm:
+                        if 'Cluster_stats2' in nm:
                             break
                     with open(path + folder + nm, 'rb') as file:
                         dict_pdf = pickle.load(file)
-                    hist, bin_edge = np.histogram(dict_pdf[pdf_param], bins=100,
-                                                  density=True)  # , weights=dict_pdf['volume'])
+                    minval = np.min(dict_pdf[pdf_param])
+                    maxval = np.max(dict_pdf[pdf_param])
+                    hist, bin_edge = np.histogram(dict_pdf[pdf_param], bins=50,
+                                                  density=True)# , weights=dict_pdf['volume'])
                     pdf_x = (bin_edge[0:-1] + bin_edge[1:]) / 2.0
                     ax.plot(pdf_x, hist)
                     leg.append(phi[j])
 
+
                 except:
+                    #print("Phi=",phi[j])
                     continue
             ax.legend(leg)
             ax.set_ylabel("Probability density")
             ax.set_xlabel(param)
-            figure.savefig(path + 'pdf_' + pdf_param + '_variance_H2_'+str(H2_perc[i])+'.png', bbox_inches='tight')
+            #plt.show()
+            figure.savefig(path+'Cluster_varimage/' + 'pdf_' + pdf_param + '_variance_H2_'+str(H2_perc[i])+'.png', bbox_inches='tight')
             plt.close(figure)
 
         # ax.set_xlabel("X location")
@@ -646,12 +686,12 @@ class ImageProcessing:
 if __name__=="__main__":
     ImgProc = ImageProcessing()
     #ImgProc.main()
-    #ImgProc.main_comparison()
+    ImgProc.main_comparison()
     #ImgProc.cluster()
     #ImgProc.pdf_plot()
-    pdf_param = {'volume', 'x_com', 'y_com', 'Lxx', 'Lyy', 'xmin'}
+    """pdf_param =['volume', 'x_com', 'y_com', 'Lxx', 'Lyy', 'xmin','spacing','hydrau_dia','aspect_ratio']
     for param in pdf_param:
-        ImgProc.pdf_comparison_h2percwise(param)
+        ImgProc.pdf_comparison_h2percwise(param)"""
 
 
 

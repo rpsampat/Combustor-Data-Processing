@@ -11,6 +11,7 @@ from mpl_toolkits import axisartist
 from labview_extract import DataExtract
 from nptdms import TdmsFile
 from scandir import scandir
+import ExhaustEmissions as ExhEmiss
 
 
 class GasProbeTrav:
@@ -116,7 +117,7 @@ class GasProbeTrav:
         return X_CO_corr, X_CO2_corr, X_CH4_corr, X_NO_corr, X_NO2_corr
 
 
-    def excess_O2(self,X_O2, X_CO,X_CO2,X_CH4, mdot_CH4, mdot_H2, mdot_air_main, mdot_air_pilot):
+    def excess_O2_archive(self,X_O2, X_CO,X_CO2,X_CH4, mdot_CH4, mdot_H2, mdot_air_main, mdot_air_pilot):
         """
         Calculate excess O2 % based on measured dry values of carbon species, inlet fuel and air mass flows.
         :param X_O2:
@@ -142,6 +143,151 @@ class GasProbeTrav:
 
         return excess_o2,mdot_excess_air
 
+    def data_comparison(self):
+        """
+        Plotting a concise comparison of images of different conditions of operation
+        :return:
+        """
+        H2_perc = [0,50,80]
+        port = [2,3,5]
+        N2_perc = [0,15,11]
+        pathsave = self.drive + self.folder + "/Results_GA_trav/"
+        with open(self.drive + self.folder + "Unified_dataset_GA_traverse", 'rb') as f:
+            dataset = pickle.load(f)
+
+        conditions = dataset.keys()
+        # port=2
+        # H2_perc = 80
+
+        phi_list = [0.3, 0.6, 0.8, 1.0]
+        ident_excl = ['N2_8', '_CO2_']
+        marker_list = ["o", "x", "x"]
+        color_list = ['m', 'r', 'k', 'g']
+        count = 0
+        EE = ExhEmiss.ExhaustEmissions()
+        import matplotlib as mpl
+        mpl.rcParams['axes.linewidth'] = 0.1  # set the value globally
+        #mpl.rcParams['legend.frameon'] = 'False'
+        mkr_sz = 0.8
+        label_size = 5.0
+        tick_size = 3.0
+        figure,ax = plt.subplots(len(H2_perc),len(port),sharex=False, sharey=False, dpi=300, gridspec_kw={'wspace': 0.2, 'hspace': 0.05})
+        for i in range(len(port)):
+            for j in range(len(H2_perc)):
+                xlegend = []
+                count =0
+                for phi in phi_list:
+                    name=0
+                    identifiers = ['Port' + str(port[i]), '_phi_', 'H2_' + str(H2_perc[j]) + '_']
+                    for name_search in conditions:
+                        id_list = np.append(identifiers, '_phi_' + str(phi) + "_")
+                        check_id = [(x in name_search) for x in id_list]
+                        check_id_exclude = [(x in name_search) for x in ident_excl]
+                        isfalse = False in check_id
+                        istrue_excl = True in check_id_exclude
+                        if not (isfalse) and not (istrue_excl):
+                            index1 = name_search.index('_phi_') + len('_phi_')  # name.index('NV100_')+len('NV100_')
+                            index2 = name_search.index('_GA')
+                            xlegend.append(name_search[index1:index2])
+                            name = name_search
+                            break
+                    if name == 0:
+                        continue
+                    else:
+                        count +=1
+                        xpos = dataset[name]['x_pos']
+                        r_chamber = 103.25
+                        wallpos = np.min(xpos)
+                        xpos = (xpos - wallpos)  # /r_chamber
+                        dx = np.max(np.abs(np.diff(xpos)))
+                        N_kernel = int(12.0 / dx)
+                        xpos = np.convolve(xpos, np.ones(N_kernel) / N_kernel, mode='valid') / r_chamber
+                        X_CO = np.convolve(dataset[name]['CO'], np.ones(N_kernel) / N_kernel, mode='valid') * 1e-6
+                        X_CO2 = np.convolve(dataset[name]['CO2'], np.ones(N_kernel) / N_kernel, mode='valid') * 1e-2
+                        X_NO = np.convolve(dataset[name]['NO'], np.ones(N_kernel) / N_kernel, mode='valid') * 1e-6
+                        X_NO2 = np.convolve(dataset[name]['NO2'], np.ones(N_kernel) / N_kernel, mode='valid') * 1e-6
+                        X_O2 = np.convolve(dataset[name]['O2'], np.ones(N_kernel) / N_kernel, mode='valid') * 1e-2
+                        X_CH4 = np.convolve(dataset[name]['CH4'], np.ones(N_kernel) / N_kernel, mode='valid') * 1e-6
+                        mdot_air_main = (np.convolve(dataset[name]['mdot_air'], np.ones(N_kernel) / N_kernel,
+                                                     mode='valid')) * self.rho_n_air / 60000.0
+                        mdot_air_pilot = (np.convolve(dataset[name]['mdot_pilotair'], np.ones(N_kernel) / N_kernel,
+                                                      mode='valid') * 1.1381 - 0.6213) * self.rho_n_air / 60000.0
+                        mdot_ch4 = (np.convolve(dataset[name]['mdot_ch4'], np.ones(N_kernel) / N_kernel,
+                                                mode='valid')) * self.rho_n_CH4 / 60000.0
+                        mdot_h2 = (np.convolve(dataset[name]['mdot_h2'], np.ones(N_kernel) / N_kernel,
+                                               mode='valid')) * self.rho_n_H2 / 60000.0
+                        X_CO_list = []
+                        X_CO2_list = []
+                        X_O2_list = []
+                        X_NO_list = []
+                        X_NO2_list = []
+                        X_O2_list = []
+                        X_CH4_list = []
+                        O2_excess_list = []
+                        mdot_excess_air_list = []
+                        for dat_ind in range(len(X_CH4)):
+                            excess_o2, n_o2_calc, n_o2_excess, n_t_dry, n_h2o = EE.excess_O2(X_O2[dat_ind], X_CO[dat_ind], X_CO2[dat_ind],
+                                                                                             X_CH4[dat_ind],
+                                                                                             mdot_ch4[dat_ind], mdot_h2[dat_ind],
+                                                                                             mdot_air_main[dat_ind],
+                                                                                             mdot_air_pilot[dat_ind])
+                            X_CO_corr, X_CO2_corr, X_CH4_corr, X_NO_corr, X_NO2_corr = \
+                                EE.spec_corr(X_O2[dat_ind], X_CO[dat_ind], X_CO2[dat_ind], X_CH4[dat_ind], X_NO[dat_ind], X_NO2[dat_ind], excess_o2,
+                                             n_o2_calc, n_o2_excess,
+                                             n_t_dry, n_h2o)
+                            X_CO_list.append(X_CO_corr)
+                            X_CO2_list.append(X_CO2_corr)
+                            X_NO_list.append(X_NO_corr)
+                            X_NO2_list.append(X_NO2_corr)
+                            X_O2_list.append(X_O2[dat_ind] * 1e2)
+                            X_CH4_list.append(X_CH4_corr)
+                            O2_excess_list.append(excess_o2)
+                            mdot_excess_air = n_o2_excess * 4.76 * self.MW_air
+                            mdot_excess_air_list.append(mdot_excess_air * 60000.0 / self.rho_n_air)
+                        phi_ind = phi_list.index(phi)
+                        ax[j, i].scatter(xpos,O2_excess_list, s=mkr_sz, linewidths=0.0,color = color_list[phi_ind])
+
+                if count==0:
+                    ax[j, i].axis('off')
+                    ax[j, i].set_frame_on(False)
+                    if j == 0:
+                        ax[j, i].set_title(str(H2_perc[j]))
+                    if i == 0:
+                        ax[j, i].set_ylabel("H$_2$="+str(H2_perc[j]) + "%\nCO dry at 15% O2 (ppm)", fontsize=label_size)
+                        ax[j, i].axis('on')
+                        # ax[j, i].set_xticks([])
+                        # ax[j, i].set_yticks([])
+                        # ax[j, i].xaxis.set_tick_params(labelbottom=False)
+                        # ax[j, i].yaxis.set_tick_params(labelleft=False)
+                else:
+                    ax[j, i].tick_params(axis='both', labelsize=tick_size,width=0.5)
+                    # ax[j, i].axis('off')
+                    # ax[j,i].set_frame_on(False)
+                    #tick_locs = ax[j,i].get_xticks()
+                    #tick_labels = ax[j, i].get_xticklabels()
+
+                    if j == 0:
+                        ax[j, i].set_title("Port " + str(port[i]), fontsize=label_size)
+                    if i == 0:
+                        ax[j, i].set_ylabel("H$_2$=" + str(H2_perc[j]) + "%\nExcess O2 (%)",
+                                            fontsize=label_size)
+                        ax[j, i].axis('on')
+
+                    if j == len(H2_perc) - 1:
+                        ax[j, i].set_xlabel("Distance from wall/Radius of Chamber", fontsize=label_size)
+                        #ax[j, i].set_xticks(ticks=tick_locs)#,labels=tick_labels)
+                        #ax[j, i].xaxis.set_tick_params(labelbottom=True)
+                    else:
+                        ax[j, i].set_xticks([])
+                        ax[j, i].xaxis.set_tick_params(labelbottom=False)
+                    mkr_sz_leg = 2.0
+                    leg = ax[j, i].legend(xlegend, title='$\phi$',title_fontsize=3.0,markerscale=mkr_sz_leg, fontsize=3.0,fancybox = False)
+                    leg.get_frame().set_linewidth(0.1)
+                    leg.get_frame().set_edgecolor("black")
+
+        #figure.tight_layout()
+        plt.savefig(pathsave + 'Excesss_O2_comparison.png', bbox_inches='tight')
+        plt.show()
 
     def data_plot(self,port,H2_perc):
         pathsave = self.drive + self.folder + "/Results_GA_trav/"
@@ -167,6 +313,7 @@ class GasProbeTrav:
         fig6, ax6 = plt.subplots()
         fig7, ax7 = plt.subplots()
         mkr_sz = 1.0
+        EE = ExhEmiss.ExhaustEmissions()
         for phi in phi_list:
             for name in conditions:
                 id_list = np.append(identifiers,'_phi_'+str(phi)+"_")
@@ -205,11 +352,12 @@ class GasProbeTrav:
                     O2_excess_list = []
                     mdot_excess_air_list=[]
                     for i in range(len(X_CH4)):
-                        excess_o2, mdot_excess_air = self.excess_O2(X_O2[i], X_CO[i], X_CO2[i], X_CH4[i], mdot_ch4[i], mdot_h2[i], mdot_air_main[i],
-                                                   mdot_air_pilot[i])
+                        excess_o2, n_o2_calc, n_o2_excess, n_t_dry, n_h2o = EE.excess_O2(X_O2[i], X_CO[i], X_CO2[i], X_CH4[i],
+                                                                                         mdot_ch4[i], mdot_h2[i],
+                                                                                         mdot_air_main[i], mdot_air_pilot[i])
                         X_CO_corr, X_CO2_corr, X_CH4_corr, X_NO_corr, X_NO2_corr = \
-                            self.spec_corr(X_O2[i], X_CO[i], X_CO2[i], X_CH4[i], X_NO[i], X_NO2[i], mdot_ch4[i], mdot_h2[i], mdot_air_main[i],
-                                           mdot_air_pilot[i])
+                            EE.spec_corr(X_O2[i], X_CO[i], X_CO2[i], X_CH4[i], X_NO[i], X_NO2[i], excess_o2, n_o2_calc, n_o2_excess,
+                                         n_t_dry, n_h2o)
                         X_CO_list.append(X_CO_corr)
                         X_CO2_list.append(X_CO2_corr)
                         X_NO_list.append(X_NO_corr)
@@ -217,6 +365,7 @@ class GasProbeTrav:
                         X_O2_list.append(X_O2[i]*1e2)
                         X_CH4_list.append(X_CH4_corr)
                         O2_excess_list.append(excess_o2)
+                        mdot_excess_air = n_o2_excess*4.76*self.MW_air
                         mdot_excess_air_list.append(mdot_excess_air*60000.0/self.rho_n_air)
 
                     ax.scatter(xpos,X_CO_list, s=mkr_sz,color = color_list[count])#,marker=marker_list[0],color=color_list[count])
@@ -415,12 +564,13 @@ class GasProbeTrav:
 
 if __name__=="__main__":
     GPT = GasProbeTrav()
+    GPT.data_comparison()
     #GPT.tdms_file_search()
-    port_list = [2,3,5]
+    """port_list = [2,3,5]
     H2_list = [0,50,80]
     for port in port_list:
         for H2 in H2_list:
-            GPT.data_plot(port,H2)
+            GPT.data_plot(port,H2)"""
 
     """for H2 in H2_list:
         GPT.data_plot_leg_port(H2)"""
