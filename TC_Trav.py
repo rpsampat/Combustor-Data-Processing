@@ -16,7 +16,7 @@ import ExhaustEmissions as ExhEmiss
 
 class TC_Trav:
     def __init__(self):
-        self.drive = 'O:/'
+        self.drive = 'P:/'
         self.folder = "FlamelessCombustor_Jan2023/Labview_data/ExpCampH2admix_2023/SteelChamber_Zaber/ProcessedData/"
         self.dataset = {}
         self.dataset_temperature = {}
@@ -246,6 +246,128 @@ class TC_Trav:
 
         return excess_o2
 
+    def data_comparison(self):
+        """
+        Plotting a concise comparison of images of different conditions of operation
+        :return:
+        """
+        H2_perc = [0,80]#[0,50,80,100]
+        port = [2,3,5]#[2,3,5,6]
+        N2_perc = [0,15,11]
+        pathsave = self.drive + self.folder + "/Results_TC_trav/"
+        with open(self.drive + self.folder + "Unified_dataset_TC_traverse", 'rb') as f:
+            dataset = pickle.load(f)
+
+        conditions = dataset.keys()
+        # port=2
+        # H2_perc = 80
+
+        phi_list = [0.3, 0.6, 0.8, 1.0]
+        ident_excl = ['N2_', '_CO2_']
+        marker_list = ["o", "x", "x"]
+        color_list = ['m', 'r', 'k', 'g']
+        count = 0
+        EE = ExhEmiss.ExhaustEmissions()
+        import matplotlib as mpl
+        mpl.rcParams['axes.linewidth'] = 0.1  # set the value globally
+        #mpl.rcParams['legend.frameon'] = 'False'
+        mkr_sz = 0.8
+        label_size = 10.0
+        tick_size = 8.0
+        figure, ax = plt.subplots(len(H2_perc), len(port), sharex=False, sharey=False, dpi=300,
+                                  gridspec_kw={'wspace': 0.27, 'hspace': 0.05})
+
+        for i in range(len(port)):
+            for j in range(len(H2_perc)):
+                xlegend = []
+                count =0
+                for phi in phi_list:
+                    name=0
+                    identifiers = ['Port' + str(port[i]), '_phi_', 'H2_' + str(H2_perc[j]) + '_']
+                    for name_search in conditions:
+                        id_list = np.append(identifiers, '_phi_' + str(phi) + "_")
+                        check_id = [(x in name_search) for x in id_list]
+                        check_id_exclude = [(x in name_search) for x in ident_excl]
+                        isfalse = False in check_id
+                        istrue_excl = True in check_id_exclude
+                        if not (isfalse) and not (istrue_excl):
+                            index1 = name_search.index('_phi_') + len('_phi_')  # name.index('NV100_')+len('NV100_')
+                            index2 = name_search.index('_TC')
+                            xlegend.append(name_search[index1:index2])
+                            name = name_search
+                            break
+                    if name == 0:
+                        continue
+                    else:
+                        count +=1
+                        xpos = dataset[name]['x_pos']
+                        r_chamber = 103.25
+                        wallpos = np.min(xpos)
+                        xpos = (xpos - wallpos)  # /r_chamber
+                        xpos_diff = np.diff(xpos)
+                        # check sign change of 1st 1/3rd of xpos range
+                        sign_change = xpos[int(len(xpos) / 3)] - xpos[0]
+                        xpos_diff_prod = np.multiply(xpos_diff, sign_change)
+                        ind_slice = np.where(xpos_diff_prod < 0.0)
+                        if len(ind_slice[0]) == 0:
+                            ind_slice = -1
+                        else:
+                            ind_slice = ind_slice[0][0]
+                        dx = np.max(np.abs(np.diff(xpos)))
+                        N_kernel = int(6.0 / dx)
+                        # sliding average by convolution operator with kernel size=N_kernel
+                        xpos = np.convolve(xpos[0:ind_slice], np.ones(N_kernel) / N_kernel, mode='valid')
+                        TC15_avg = np.average(dataset[name]['TC15'].reshape(-1, 10), axis=1)
+                        TC15 = np.convolve(TC15_avg[0:ind_slice], np.ones(N_kernel) / (N_kernel), mode='valid')
+                        phi_ind = phi_list.index(phi)
+                        xpos = xpos/r_chamber
+                        ax[j, i].scatter(xpos, TC15, s=mkr_sz, linewidths=0.0,color = color_list[phi_ind])
+                        ax[j,i].set_ylim(450,1500)
+
+                if count==0:
+                    ax[j, i].axis('off')
+                    ax[j, i].set_frame_on(False)
+                    if j == 0:
+                        ax[j, i].set_title(str(H2_perc[j]))
+                    if i == 0:
+                        ax[j, i].set_ylabel("H$_2$="+str(H2_perc[j]) + "%\nCO dry at 15% O2 (ppm)", fontsize=label_size)
+                        ax[j, i].axis('on')
+                        # ax[j, i].set_xticks([])
+                        # ax[j, i].set_yticks([])
+                        # ax[j, i].xaxis.set_tick_params(labelbottom=False)
+                        # ax[j, i].yaxis.set_tick_params(labelleft=False)
+                else:
+                    ax[j, i].tick_params(axis='both', labelsize=tick_size,width=1.0)
+                    # ax[j, i].axis('off')
+                    # ax[j,i].set_frame_on(False)
+                    #tick_locs = ax[j,i].get_xticks()
+                    #tick_labels = ax[j, i].get_xticklabels()
+
+                    if j == 0:
+                        ax[j, i].set_title("Port " + str(port[i]), fontsize=label_size*1.5)
+                    if i == 0:
+                        ax[j, i].set_ylabel("H$_2$=" + str(H2_perc[j]) + "%\n"+"Temperature (C)",
+                                            fontsize=label_size)
+                        ax[j, i].axis('on')
+
+                    if j == len(H2_perc) - 1:
+                        ax[j, i].set_xlabel("r$_{wall}$/R$_0$", fontsize=label_size)#"Distance from wall/Radius of Chamber"
+                        #ax[j, i].set_xticks(ticks=tick_locs)#,labels=tick_labels)
+                        #ax[j, i].xaxis.set_tick_params(labelbottom=True)
+                    else:
+                        ax[j, i].set_xticks([])
+                        ax[j, i].xaxis.set_tick_params(labelbottom=False)
+                    mkr_sz_leg = 4.0
+                    leg = ax[j, i].legend(xlegend, title='$\phi$',title_fontsize=9.0,markerscale=mkr_sz_leg, fontsize=8.0,fancybox = False)
+                    leg.get_frame().set_linewidth(0.1)
+                    leg.get_frame().set_edgecolor("black")
+
+        #figure.tight_layout()
+        #plt.show()
+        plt.savefig(pathsave + 'TC_comparison_reduc.png', bbox_inches='tight')
+        plt.savefig(pathsave + 'TC_comparison_reduc.pdf', bbox_inches='tight')
+        #plt.show()
+        plt.close(figure)
     def data_plot_gascomp_exh(self):
         pathsave = self.drive + self.folder + "/Results_TC_gascomp_wet/"
         with open(self.drive + self.folder + "Unified_dataset_TC_traverse", 'rb') as f:
@@ -254,7 +376,7 @@ class TC_Trav:
         conditions = dataset.keys()
         # port=2
         H2_perc = 80
-        identifiers = ['phi', 'H2']
+        identifiers = ['phi', 'H2','Port3']
         H2_perc_list = [0,10,50,80,100]
         phi_list = [0.3, 0.35,0.5,0.6,0.7, 0.8,0.9, 1.0]
         ident_excl = ['N2_', '_CO2_','_turbgrid']
@@ -269,6 +391,7 @@ class TC_Trav:
         fig4, ax4 = plt.subplots()
         fig5, ax5 = plt.subplots()
         fig6, ax6 = plt.subplots()
+        fig7, ax7 = plt.subplots()
         mkr_sz = 30
         EE = ExhEmiss.ExhaustEmissions()
         for perc in H2_perc_list:
@@ -282,6 +405,7 @@ class TC_Trav:
             X_O2_list = []
             X_CH4_list = []
             O2_excess_list=[]
+            Air_cool_list = []
             for phi in phi_list:
                 id_list = np.append(id_list0, '_phi_' + str(phi))
                 id_list2 = np.append(id_list0, '_phi' + str(phi))
@@ -300,6 +424,7 @@ class TC_Trav:
                         X_O2=np.mean(dataset[name]['O2'])*1e-2
                         X_CH4=np.mean(dataset[name]['CH4'])*1e-6
                         mdot_air_main = np.mean(dataset[name]['mdot_air'])*self.rho_n_air/60000.0
+                        mdot_air_cool = np.mean(dataset[name]['mdot_coolair']) * self.rho_n_air / 60000.0
                         mdot_air_pilot = (np.mean(dataset[name]['mdot_pilotair'])*1.1381-0.6213)*self.rho_n_air/60000.0
                         mdot_ch4 = np.mean(dataset[name]['mdot_ch4'])*self.rho_n_CH4/60000.0
                         mdot_h2 = np.mean(dataset[name]['mdot_h2'])*self.rho_n_H2/60000.0
@@ -315,6 +440,7 @@ class TC_Trav:
                         X_CH4_list.append(X_CH4_corr)
                         O2_excess_list.append(excess_o2)
                         phi_plot.append(phi)
+                        Air_cool_list.append(mdot_air_cool)
                         break
 
             xax = phi_plot
@@ -326,6 +452,7 @@ class TC_Trav:
             ax4.scatter( xax, X_O2_list, s=mkr_sz, color=color_list[count])
             ax5.scatter( xax, X_CH4_list, s=mkr_sz, color=color_list[count])
             ax6.scatter(xax, O2_excess_list, s=mkr_sz, color=color_list[count])
+            ax7.scatter(xax, Air_cool_list, s=mkr_sz, color=color_list[count])
 
 
             count += 1
@@ -393,10 +520,13 @@ class TC_Trav:
         fig6.savefig(pathsave + fig_name + '.pdf')
         fig6.savefig(pathsave + fig_name + '.png')
 
-
-
-
-
+        ax7.legend(xlegend, markerscale=mkr_sz_leg, title=leg_title)
+        ax7.set_ylabel("Cooling air (kg/s)")
+        ax7.set_xlabel("Equivalence Ratio ($\phi$)")
+        fig_name = "Coolingair_exhaust_quartz" + "_vs_phi"
+        fig7.tight_layout()
+        fig7.savefig(pathsave + fig_name + '.pdf')
+        fig7.savefig(pathsave + fig_name + '.png')
 
 
 if __name__=="__main__":
@@ -408,4 +538,5 @@ if __name__=="__main__":
         for H2 in H2_list:
             TCT.data_plot(port, H2)"""
 
-    TCT.data_plot_gascomp_exh()
+    #TCT.data_plot_gascomp_exh()
+    TCT.data_comparison()
