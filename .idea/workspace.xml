@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3e9acfe0-dfce-464a-8ad0-b140b258e515" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/EdgeDetection.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/SavitzkyGolay2D.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ImageProcessing.py" beforeDir="false" afterPath="$PROJECT_DIR$/ImageProcessing.py" afterDir="false" />
     </list>
@@ -19,7 +17,7 @@
       <file leaf-file-name="Profiles_intercase.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Profiles_intercase.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1462">
+            <state relative-caret-position="8721">
               <caret line="525" column="8" selection-start-line="525" selection-start-column="8" selection-end-line="525" selection-end-column="8" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
@@ -31,7 +29,7 @@
       <file leaf-file-name="GasProbeTrav.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/GasProbeTrav.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-901">
+            <state relative-caret-position="221">
               <caret line="13" column="18" selection-start-line="13" selection-start-column="18" selection-end-line="13" selection-end-column="18" />
             </state>
           </provider>
@@ -40,8 +38,8 @@
       <file leaf-file-name="ImageProcessing.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/ImageProcessing.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="189">
-              <caret line="319" column="27" selection-start-line="319" selection-start-column="27" selection-end-line="319" selection-end-column="27" />
+            <state relative-caret-position="1911">
+              <caret line="404" selection-start-line="404" selection-end-line="404" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -61,8 +59,8 @@
       <file leaf-file-name="SavitzkyGolay2D.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/SavitzkyGolay2D.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="204">
-              <caret line="12" column="29" lean-forward="true" selection-start-line="12" selection-start-column="29" selection-end-line="12" selection-end-column="29" />
+            <state relative-caret-position="187">
+              <caret line="12" column="29" selection-start-line="12" selection-start-column="29" selection-end-line="12" selection-end-column="29" />
               <folding>
                 <element signature="e#24#42#0" expanded="true" />
               </folding>
@@ -73,8 +71,8 @@
       <file leaf-file-name="EdgeDetection.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/EdgeDetection.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-576">
-              <caret line="12" column="4" selection-start-line="12" selection-start-column="4" selection-end-line="12" selection-end-column="4" />
+            <state relative-caret-position="527">
+              <caret line="40" selection-start-line="40" selection-end-line="40" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -85,7 +83,7 @@
       <file leaf-file-name="ExhaustEmissions.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ExhaustEmissions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="17">
+            <state relative-caret-position="3332">
               <caret line="204" column="41" selection-start-line="204" selection-start-column="12" selection-end-line="204" selection-end-column="41" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
@@ -109,7 +107,7 @@
       <file leaf-file-name="TC_Trav.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/TC_Trav.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="17">
+            <state relative-caret-position="6069">
               <caret line="370" column="8" selection-start-line="370" selection-start-column="8" selection-end-line="370" selection-end-column="8" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
@@ -121,7 +119,7 @@
       <file leaf-file-name="Settings.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Settings.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-527">
+            <state relative-caret-position="2125">
               <caret line="125" column="61" selection-start-line="125" selection-start-column="12" selection-end-line="125" selection-end-column="61" />
             </state>
           </provider>
@@ -160,7 +158,8 @@
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="-7" />
+    <option name="x" value="384" />
+    <option name="y" value="179" />
     <option name="width" value="974" />
     <option name="height" value="1047" />
   </component>
@@ -290,15 +289,14 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="1" sideWeight="0.4945534" weight="0.24920969" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
       <window_info anchor="bottom" id="Version Control" order="7" weight="0.32897604" />
       <window_info anchor="bottom" id="Python Console" order="7" weight="0.32897604" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.3278867" />
-      <window_info id="Structure" order="2" sideWeight="0.5054466" side_tool="true" visible="true" weight="0.12908325" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.251634" />
+      <window_info active="true" id="Structure" order="2" sideWeight="0.5054466" side_tool="true" visible="true" weight="0.12908325" />
       <window_info anchor="bottom" id="Terminal" order="7" />
       <window_info id="Favorites" order="0" side_tool="true" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.36710238" />
@@ -379,7 +377,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/ImageProcessing.py</url>
-          <line>429</line>
+          <line>446</line>
           <option name="timeStamp" value="58" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -419,16 +417,11 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/ImageProcessing.py</url>
-          <line>613</line>
+          <line>630</line>
           <option name="timeStamp" value="92" />
         </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/ImageProcessing.py</url>
-          <line>292</line>
-          <option name="timeStamp" value="97" />
-        </line-breakpoint>
       </breakpoints>
-      <option name="time" value="98" />
+      <option name="time" value="100" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
@@ -744,7 +737,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Profiles_intercase.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1462">
+        <state relative-caret-position="8721">
           <caret line="525" column="8" selection-start-line="525" selection-start-column="8" selection-end-line="525" selection-end-column="8" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
@@ -754,14 +747,14 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Settings.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-527">
+        <state relative-caret-position="2125">
           <caret line="125" column="61" selection-start-line="125" selection-start-column="12" selection-end-line="125" selection-end-column="61" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/TC_Trav.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
+        <state relative-caret-position="6069">
           <caret line="370" column="8" selection-start-line="370" selection-start-column="8" selection-end-line="370" selection-end-column="8" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
@@ -771,7 +764,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/ExhaustEmissions.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
+        <state relative-caret-position="3332">
           <caret line="204" column="41" selection-start-line="204" selection-start-column="12" selection-end-line="204" selection-end-column="41" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
@@ -788,8 +781,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/SavitzkyGolay2D.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="204">
-          <caret line="12" column="29" lean-forward="true" selection-start-line="12" selection-start-column="29" selection-end-line="12" selection-end-column="29" />
+        <state relative-caret-position="187">
+          <caret line="12" column="29" selection-start-line="12" selection-start-column="29" selection-end-line="12" selection-end-column="29" />
           <folding>
             <element signature="e#24#42#0" expanded="true" />
           </folding>
@@ -803,19 +796,9 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/EdgeDetection.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-576">
-          <caret line="12" column="4" selection-start-line="12" selection-start-column="4" selection-end-line="12" selection-end-column="4" />
-          <folding>
-            <element signature="e#0#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/GasProbeTrav.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-901">
+        <state relative-caret-position="221">
           <caret line="13" column="18" selection-start-line="13" selection-start-column="18" selection-end-line="13" selection-end-column="18" />
         </state>
       </provider>
@@ -827,10 +810,20 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/EdgeDetection.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="527">
+          <caret line="40" selection-start-line="40" selection-end-line="40" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/ImageProcessing.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="189">
-          <caret line="319" column="27" selection-start-line="319" selection-start-column="27" selection-end-line="319" selection-end-column="27" />
+        <state relative-caret-position="1911">
+          <caret line="404" selection-start-line="404" selection-end-line="404" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>

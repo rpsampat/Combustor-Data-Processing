@@ -52,7 +52,7 @@ class ImageProcessing:
         :return:
         """
         path = self.drive + self.folder
-        identifiers = ["NV100_", "H2_50","_phi_",]
+        identifiers = ["NV100_", "H2_10","_phi_"]
         identifier_exclude = ["_index","N2","CO2"]
         identifier_optional = ["H2_"]
         subdir_list = next(os.walk(path))[1]  # list of immediate subdirectories within the data directory
@@ -252,18 +252,18 @@ class ImageProcessing:
 
     def cluster(self):
         """
-        Identify clusters using the DBSCAN algorithm. This prcoess can either be done on the variance images or
+        Identify clusters using the DBSCAN algorithm. This process can either be done on the variance images or
         the raw images directly, depending on the folder chosen and the name condition.
         :return:
         """
-        dict_pdf={'volume':[],'x_com':[],'y_com':[],'Lxx':[],'Lyy':[],'xmin':[],'spacing':[],'hydrau_dia':[],'aspect_ratio':[]}
+        #dict_pdf={'volume':[],'x_com':[],'y_com':[],'Lxx':[],'Lyy':[],'xmin':[],'spacing':[],'hydrau_dia':[],'aspect_ratio':[]}
         path = self.drive + self.folder
         #file_loc = path+'NV100_H2_100_phi_1.0/'
         #path = self.drive + self.folder
         sub_list = self.image_dir_list()  # ['NV100_H2_0_phi_0.6','NV100_H2_10_phi_0.6','NV100_H2_50_phi_0.6','NV100_H2_80_phi_0.6','NV100_H2_100_phi_0.6']#
         #sub_list = ['60_kW_phi0.9_ss_5000']
         exception = 0
-        plot_cluster_image='y'
+        plot_cluster_image='n'
         settings={0:{'thresh':60,'eps':8.0,'minpts':20},10:{'thresh':60,'eps':8.0,'minpts':20},
                   50:{'thresh':60,'eps':8.0,'minpts':150},80:{'thresh':20,'eps':8.0,'minpts':100},
                   100:{'thresh':50,'eps':8.0,'minpts':125}}
@@ -288,9 +288,19 @@ class ImageProcessing:
             stdv_ind = np.where(stdv_name == 0)[0][0]
             stdv = cv2.imread(file_loc+filenames[stdv_ind])
             stdv_max = np.max(stdv)
-            #stdv_min = np.unique(stdv)
+            print("Stdv max=",stdv_max)
+            stdv_mean = np.mean(np.mean(stdv[:,:,0],axis=0))
+            stdv_std = np.std(np.std(stdv[:,:,0],axis=0))
+            print("Stdv of stdv=",stdv_std)
+            print("Stdv mean=",stdv_mean)
+            if stdv_std>stdv_mean/3.0:
+                thresh_criteria = int(stdv_mean-stdv_std)
+            else:
+                thresh_criteria = int(stdv_mean/4.0)
             # Iterating through files for a particular case
             count = 0
+            dict_pdf = {'volume': [], 'x_com': [], 'y_com': [], 'Lxx': [], 'Lyy': [], 'xmin': [], 'spacing': [],
+                        'hydrau_dia': [], 'aspect_ratio': [], 'rect_properties':[],'num_cluster':[]}
             for name in filenames:
                 """if count ==6:
                     break"""
@@ -304,7 +314,7 @@ class ImageProcessing:
                 count += 1
                 print("Count=", count)
                 """
-                The blue componenet of the image is chosen. Next it is converted to grey scale and then
+                The blue component of the image is chosen. Next it is converted to grey scale and then
                 normalised by its own min-max values.
                 """
                 img = cv2.imread(file_loc+name)
@@ -316,6 +326,8 @@ class ImageProcessing:
                 #img_thresh = self.image_enhancement(img,False,lower_lim=150)
                 #img_ind = np.where(img_thresh>0)
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                img_thresh_loc = np.where(img<thresh_criteria)
+                img[img_thresh_loc] = 0
                 n = 0
                 while (n <2):
                     img = cv2.pyrDown(img)
@@ -331,8 +343,11 @@ class ImageProcessing:
                 #plt.show()
                 otsu_threshold, otsu_image_result = cv2.threshold(img_normalized, 0, 255, cv2.THRESH_TRUNC + cv2.THRESH_OTSU)
                 print("Cluster Otsu=", otsu_threshold)
-                img_cluster_mask,img_ind,cluster_ind_all,num_cluster,unique_counts,db = ED.dbscan(img_normalized, red_level=0, dbscan_thresh=max(otsu_threshold,int(stdv_max/4)),
+                try:
+                    img_cluster_mask,img_ind,cluster_ind_all,num_cluster,unique_counts,db = ED.dbscan(img_normalized, red_level=0, dbscan_thresh=otsu_threshold,
                                                epsilon=settings[ind]['eps'], minpts=settings[ind]['minpts'], plot_img=plot_cluster_image)
+                except:
+                    continue
                 """img_cluster_mask2,img_ind,cluster_ind,num_cluster,unique_counts,db = ED.dbscan(img_cluster_mask, red_level=0, dbscan_thresh=125, epsilon=settings[ind]['eps'], minpts=settings[ind]['minpts'],
                                                 plot_img=plot_cluster_image)
                 img_proc3 = ED.arr2img(img_cluster_mask2)
@@ -364,6 +379,7 @@ class ImageProcessing:
                 #print("Unique clusters=",num_cluster)
                 #print("Unique counts=",unique_counts)
                 core_samp = list(db.core_sample_indices_)
+                dict_pdf['num_cluster'].append(len(num_cluster))
                 for i in range(len(num_cluster)):
                     # iterating over each cluster detected in this image
                     #ignoring cluster id -1
@@ -378,7 +394,8 @@ class ImageProcessing:
                     yval = img_ind[0][cluster_ind] # ylocation of all points in this
                     coords = list(zip(xval,yval))
                     coords = np.reshape(coords,(len(xval),1,2))
-                    rect = cv2.minAreaRect(coords)
+                    rect = cv2.minAreaRect(coords)#((xcenter,ycenter),(width,height),angle of rotation)
+                    dict_pdf['rect_properties'].append(rect)
                     box = cv2.boxPoints(rect)
                     box = np.int0(box)
                     if plot_cluster_image == 'y' and count < 5:
@@ -387,8 +404,8 @@ class ImageProcessing:
                     y_loc = np.mean(yval)
                     dict_pdf['x_com'].append(x_loc)
                     dict_pdf['y_com'].append(y_loc)
-                    Lxx = math.sqrt((box[0][0]-box[1][0])**2.0+(box[0][1]-box[1][1])**2.0)#np.max(xval)-np.min(xval)
-                    Lyy =  math.sqrt((box[1][0]-box[2][0])**2.0+(box[1][1]-box[2][1])**2.0)#np.max(yval)-np.min(yval)
+                    Lxx = np.max(xval)-np.min(xval)#math.sqrt((box[0][0]-box[1][0])**2.0+(box[0][1]-box[1][1])**2.0)#
+                    Lyy =  np.max(yval)-np.min(yval)#math.sqrt((box[1][0]-box[2][0])**2.0+(box[1][1]-box[2][1])**2.0)#
                     dict_pdf['Lxx'].append(Lxx)
                     dict_pdf['Lyy'].append(Lyy)
                     try:
@@ -418,7 +435,7 @@ class ImageProcessing:
                     ax3.imshow(img_box, cmap='gray')
                     fig3.colorbar(sc, cax=cax)
                     fig3.savefig(file_loc + 'dbscan_img/' + 'gray_box_' + subdir + '_' + name, bbox_inches='tight')
-                    plt.show()
+                    #plt.show()
                 plt.close()
 
 
@@ -469,7 +486,7 @@ class ImageProcessing:
                Plotting a concise comparison of pdfs of different conditions of operation
                :return:
                """
-        H2_perc = [50,80,100]#[0, 10, 50, 80, 100]
+        H2_perc = [0]#[0, 10, 50, 80, 100]
         phi = [0.3, 0.35, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
         param_label={'aspect_ratio':'Aspect Ratio', 'x_com':'X$_{COM}$ (pixels)', 'Lxx':'L$_{xx}$ (pixels)',
                      'Lyy':'L$_{yy}$ (pixels)','y_com':'Y$_{COM}$ (pixels)','spacing':'Spacing',
@@ -497,18 +514,18 @@ class ImageProcessing:
                     red_vol = np.array(dict_pdf['volume'])
                     red_Lxx = np.array(dict_pdf['Lxx'])
                     red_Lyy = np.array(dict_pdf['Lyy'])
-                    red_ind = np.where(red_Lxx>100)[0]#np.where(red_vol>5000)[0]#10000
+                    red_ind = np.where(red_vol>1000)[0]#10000np.where(red_Lxx>100)[0]#
                     red_ycom = np.array(dict_pdf['y_com'])
-                    red_ind2 = np.where(red_Lyy>10)[0]#np.where(red_ycom>0)[0]
+                    red_ind2 = np.where(red_Lyy>5)[0]#np.where(red_ycom>0)[0]
                     red_ind_tot = list(set.intersection(set(red_ind),set(red_ind2)))
                     red_val = np.array(dict_pdf[pdf_param])[red_ind_tot]
                     if pdf_param == 'aspect_ratio':
                         ind_invt = np.where(red_val<1.0)[0]
                         red_val[ind_invt] = 1.0/red_val[ind_invt]
                     red_vol_hist = red_vol[red_ind_tot]
-                    hist, bin_edge = np.histogram(red_val, bins=50,
+                    hist, bin_edge = np.histogram(red_val, bins=20,
                                                   density=True)#, weights=red_vol[red_ind_tot])
-                    hist_vol, bin_edge_vol = np.histogram(red_vol_hist, bins=50,
+                    hist_vol, bin_edge_vol = np.histogram(red_vol_hist, bins=20,
                                                   density=True)
                     pdf_x = (bin_edge[0:-1] + bin_edge[1:]) / 2.0
                     pdf_x_vol = (bin_edge_vol[0:-1] + bin_edge_vol[1:]) / 2.0
@@ -788,8 +805,8 @@ if __name__=="__main__":
     #ImgProc.main_comparison()
     ImgProc.cluster()
     #ImgProc.pdf_plot()
-    """pdf_param =['aspect_ratio']#['volume', 'x_com', 'y_com', 'Lxx', 'Lyy', 'xmin','spacing','hydrau_dia','aspect_ratio']#['aspect_ratio', 'x_com', 'Lxx']#
+    pdf_param =['volume', 'x_com', 'y_com', 'Lxx', 'Lyy', 'xmin','spacing','hydrau_dia','aspect_ratio']#['aspect_ratio', 'x_com', 'Lxx']#['aspect_ratio']#
     for param in pdf_param:
-        ImgProc.pdf_comparison_h2percwise(param)"""
+        ImgProc.pdf_comparison_h2percwise(param)
 
 
