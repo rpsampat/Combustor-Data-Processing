@@ -14,7 +14,7 @@ from SavitzkyGolay2D import sgolay2d
 class ImageProcessing:
     def __init__(self):
         # 'TC9'=='Flang Temp', 'TC11'=='Frame Temp'
-        self.drive = 'P:/'#'P:/'#
+        self.drive = 'O:/'#'P:/'#
         self.folder = "FlamelessCombustor_Jan2023/DSLR/OldTube_DSLR_UV_GasAnalyser/"#"ExhaustModification_June2022/ModifiedExhaust_20220602/DSLR_ExhaustModification_2022_06_02/"#
         self.scaling_folder = "Scaling images with light on/"
         self.scale = self.scaling()
@@ -33,13 +33,23 @@ class ImageProcessing:
         Manually entered scaling value by giving (x1,y1) and (x2,y2) from a calibration image and entering the known distance between them.
         :return:
         """
-        x1 = 801.139
-        y1 = 2565.29
-        x2 = 3672.99
-        y2 = 2569.72
-        dist_px = math.sqrt((x2-x1)**2.0+(y2-y1)**2.0)
-        dist_mm = 240.0
-        scale = dist_mm/dist_px
+        """path = self.drive + self.folder + "Calibration_20230130/"
+        name="calibration_0129.jpg"
+        img = cv2.imread(path + name)  # bgr
+        img =cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        plt.subplots()
+        plt.imshow(img)
+        plt.show()"""
+
+        x1 = 155.0#801.139
+        y1 = 1921.0#2565.29
+        x2 = 3431.0#3672.99
+        y2 = 2191.0#2569.72
+        dist_px = math.sqrt((x2 - x1) ** 2.0 + (y2 - y1) ** 2.0)
+        dist_div = 200#50.0
+        div2mm = 29.0 / 33.0
+        dist_mm = dist_div * div2mm
+        scale = dist_mm / dist_px
         return scale
 
     def save_image_named(self,img,name,path):
@@ -52,7 +62,7 @@ class ImageProcessing:
         :return:
         """
         path = self.drive + self.folder
-        identifiers = ["NV100_", "H2_10","_phi_"]
+        identifiers = ["NV100_", "H2_100","_phi_1.0"]
         identifier_exclude = ["_index","N2","CO2"]
         identifier_optional = ["H2_"]
         subdir_list = next(os.walk(path))[1]  # list of immediate subdirectories within the data directory
@@ -175,14 +185,26 @@ class ImageProcessing:
         H2_perc = [0, 10,50,80,100]
         phi = [0.6,0.8,1.0]#[0.3,0.35,0.5,0.6,0.7, 0.8, 0.9,1.0]
         N2_perc = [0,15,11]
-        figure,ax = plt.subplots(len(phi),len(H2_perc),sharex=True, sharey=True, dpi=300, gridspec_kw={'wspace': 0.01, 'hspace': 0.01}, figsize=(10,4.5))#,
-                         #gridspec_kw={'wspace': 0.01, 'hspace': 0.01})# figsiz=(24,18)
+        px = 1.0/300.0
+        figure,ax = plt.subplots(len(phi),len(H2_perc),sharex=True, sharey=True, dpi=300, gridspec_kw={'wspace': 0.1, 'hspace': 0.0025}, figsize=(10,4.5))#(24,18))#(10,4.5))#,
+                         #gridspec_kw={'wspace': 0.01, 'hspace': 0.01})# figsiz=
         path = self.drive + self.folder
         sub_list = self.image_dir_list()
         folder = sub_list[0]+ "/" + "Variance/"
         with open(path + folder + 'avg_146.jpg', 'rb') as file:
             img = plt.imread(file)
+
+        tick_size = 4.0
+        aspect = 'equal'  # '#float(shp0[0])/float(shp0[1])
         img_blank =img*0+255
+        pyr_scale =1
+        n = 0
+        while (n < pyr_scale-1):
+            img_blank = cv2.pyrDown(img_blank)
+            n = n + 1
+        shp0 = np.shape(img_blank)
+
+        #self.scale=1.0
 
         for i in range(len(H2_perc)):
             for j in range(len(phi)):
@@ -212,41 +234,115 @@ class ImageProcessing:
 
                     with open(path+ folder + 'avg_'+str(count_files)+'.jpg', 'rb') as file:
                         img = plt.imread(file)
-                    img_thresh,img_gray = self.image_enhancement(img,False,220)
+                    #img_thresh,img_gray = self.image_enhancement(img,False,220)
+                    n = 0
+                    while (n < pyr_scale-1):
+                        img = cv2.pyrDown(img)
+                        n = n + 1
+                    shp = np.shape(img)
                     img_normalized = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX) # image normalisation to improve visibility of final plot
-                    ax[j, i].imshow(img_normalized,vmin=0,vmax=255, aspect='auto')#[0:-48,85:-1,:]
+                    ax_img = ax[j, i].imshow(img_normalized,vmin=0,vmax=255, aspect=aspect,origin='lower',extent=[0,shp[1],0,shp[0]])#[0:-48,85:-1,:]
+                    #ax[j, i].set_xlim((0, shp[1]))
+                    #img_ex = ax_img.extent
                     ax[j, i].axis('off')
                     ax[j,i].set_frame_on(False)
                     if j==0:
                         ax[j, i].set_title(str(H2_perc[i]))
-                    if i==0:
-                        ax[j, i].set_ylabel(str(phi[j]))
+                    if i == 0 and j < len(phi) - 1:
+                        #ax[j, i].set_frame_on(True)
+                        ax[j, i].set_ylabel(str(phi[j])+"\n"+"$\\regular_{Y (mm)}$")
                         ax[j, i].axis('on')
-                        ax[j, i].set_xticks([])
-                        ax[j, i].set_yticks([])
-                        ax[j, i].xaxis.set_tick_params(labelbottom=False)
-                        ax[j, i].yaxis.set_tick_params(labelleft=False)
-
+                        ticky0 = np.linspace(0,shp[0],len(ax[j, i].get_yticks()))
+                        #ticky0_min = np.min(ticky0)
+                        ticky1 = np.round((ticky0) * self.scale*pyr_scale, decimals=2)
+                        #ticky0 = ticky0 - ticky0_min
+                        ax[j, i].set_yticks(ticks=ticky0, labels=ticky1)
+                        ax[j, i].tick_params(axis='both', which='both', labelsize=tick_size, width=1.0)
+                        ax[j, i].xaxis.set_tick_params(labelbottom=False,width=0)
+                        #ax[j, i].yaxis.set_tick_params(labelleft=False,width=0)
+                    if i>0 and j==len(phi)-1:
+                        #ax[j, i].set_frame_on(True)
+                        ax[j, i].set_xlabel("$\\regular_{X (mm)}$")
+                        ax[j, i].axis('on')
+                        tickx0 = np.linspace(0,shp[1],len(ax[j, i].get_xticks()))
+                        #tickx0_min = np.min(tickx0)
+                        tickx1 = np.round((tickx0) * self.scale*pyr_scale, decimals=1)
+                        ax[j, i].set_xlim((tickx0[0], tickx0[-1]))
+                        #tickx0 = tickx0 - tickx0_min
+                        ax[j, i].set_xticks(ticks=tickx0, labels=tickx1)
+                        ax[j, i].tick_params(axis='both', which='both', labelsize=tick_size, width=1.0)
+                        ax[j, i].yaxis.set_tick_params(labelleft=False, width=0)
+                    if i==0 and j==len(phi)-1:
+                        #ax[j, i].set_frame_on(True)
+                        ax[j, i].set_ylabel(str(phi[j])+"\n"+"$\\regular_{Y (mm)}$")
+                        ax[j, i].set_xlabel("$\\regular_{X (mm)}$")
+                        ax[j, i].axis('on')
+                        tickx0 = np.linspace(0,shp[1],len(ax[j, i].get_xticks()))
+                        #tickx0_min = np.min(tickx0)
+                        tickx1 = np.round((tickx0) * self.scale*pyr_scale,decimals=1)
+                        #tickx0=tickx0-tickx0_min
+                        ticky0 = np.linspace(0,shp[0],len(ax[j, i].get_yticks()))
+                        #ticky0_min = np.min(ticky0)
+                        ticky1 = np.round((ticky0) * self.scale*pyr_scale, decimals=1)
+                        ax[j, i].set_xlim((tickx0[0], tickx0[-1]))
+                        #ticky0 = ticky0 - ticky0_min
+                        ax[j, i].set_xticks(ticks=tickx0,labels=tickx1)
+                        ax[j, i].set_yticks(ticks=ticky0, labels=ticky1)
+                        ax[j, i].tick_params(axis='both',which='both', labelsize=tick_size, width=1.0)
 
                 except:
-                    ax[j, i].imshow(img_blank, cmap='gray', aspect='auto')  # , aspect='auto')#[0:-48,85:-1,:]
+                    ax[j, i].imshow(img_blank, cmap='gray', aspect=aspect,origin='lower',extent=[0,shp0[1],0,shp0[0]])  # , aspect='auto')#[0:-48,85:-1,:]
                     ax[j, i].axis('off')
                     ax[j, i].set_frame_on(False)
-                    if j==0:
+                    if j == 0:
                         ax[j, i].set_title(str(H2_perc[i]))
-                    if i==0:
-                        ax[j, i].set_ylabel(str(phi[j]))
+                    if i == 0 and j < len(phi) - 1:
+                        # ax[j, i].set_frame_on(True)
+                        ax[j, i].set_ylabel(str(phi[j]) + "\n" + "$\\regular_{Y (mm)}$")
                         ax[j, i].axis('on')
-                        ax[j, i].set_xticks([])
-                        ax[j, i].set_yticks([])
-                        ax[j, i].xaxis.set_tick_params(labelbottom=False)
-                        ax[j, i].yaxis.set_tick_params(labelleft=False)
+                        ticky0 = np.linspace(0, shp[0], len(ax[j, i].get_yticks()))
+                        # ticky0_min = np.min(ticky0)
+                        ticky1 = np.round((ticky0) * self.scale * pyr_scale, decimals=1)
+                        # ticky0 = ticky0 - ticky0_min
+                        ax[j, i].set_yticks(ticks=ticky0, labels=ticky1)
+                        ax[j, i].tick_params(axis='both', which='both', labelsize=tick_size, width=1.0)
+                        ax[j, i].xaxis.set_tick_params(labelbottom=False, width=0)
+                        # ax[j, i].yaxis.set_tick_params(labelleft=False,width=0)
+                    if i > 0 and j == len(phi) - 1:
+                        # ax[j, i].set_frame_on(True)
+                        ax[j, i].set_xlabel("$\\regular_{X (mm)}$")
+                        ax[j, i].axis('on')
+                        tickx0 = np.linspace(0, shp[1], len(ax[j, i].get_xticks()))
+                        # tickx0_min = np.min(tickx0)
+                        tickx1 = np.round((tickx0) * self.scale * pyr_scale, decimals=1)
+                        ax[j, i].set_xlim((tickx0[0], tickx0[-1]))
+                        # tickx0 = tickx0 - tickx0_min
+                        ax[j, i].set_xticks(ticks=tickx0, labels=tickx1)
+                        ax[j, i].tick_params(axis='both', which='both', labelsize=tick_size, width=1.0)
+                        ax[j, i].yaxis.set_tick_params(labelleft=False, width=0)
+                    if i == 0 and j == len(phi) - 1:
+                        # ax[j, i].set_frame_on(True)
+                        ax[j, i].set_ylabel(str(phi[j]) + "\n" + "$\\regular_{Y (mm)}$")
+                        ax[j, i].set_xlabel("$\\regular_{X (mm)}$")
+                        ax[j, i].axis('on')
+                        tickx0 = np.linspace(0, shp[1], len(ax[j, i].get_xticks()))
+                        # tickx0_min = np.min(tickx0)
+                        tickx1 = np.round((tickx0) * self.scale * pyr_scale, decimals=1)
+                        # tickx0=tickx0-tickx0_min
+                        ticky0 = np.linspace(0, shp[0], len(ax[j, i].get_yticks()))
+                        # ticky0_min = np.min(ticky0)
+                        ticky1 = np.round((ticky0) * self.scale * pyr_scale, decimals=1)
+                        ax[j, i].set_xlim((tickx0[0], tickx0[-1]))
+                        # ticky0 = ticky0 - ticky0_min
+                        ax[j, i].set_xticks(ticks=tickx0, labels=tickx1)
+                        ax[j, i].set_yticks(ticks=ticky0, labels=ticky1)
+                        ax[j, i].tick_params(axis='both', which='both', labelsize=tick_size, width=1.0)
+
                     continue
-        #figure.tight_layout()
         figure.suptitle("Hydrogen %")
-        figure.text(0.05,0.33,"Equivalence Ratio ($\phi$)", rotation='vertical')
+        figure.text(0.025,0.33,"Equivalence Ratio ($\phi$)", rotation='vertical')
         plt.savefig(path + 'avg_comparison_reduced.png', bbox_inches='tight')
-        plt.show()
+        #plt.show()
 
 
 
@@ -263,10 +359,10 @@ class ImageProcessing:
         sub_list = self.image_dir_list()  # ['NV100_H2_0_phi_0.6','NV100_H2_10_phi_0.6','NV100_H2_50_phi_0.6','NV100_H2_80_phi_0.6','NV100_H2_100_phi_0.6']#
         #sub_list = ['60_kW_phi0.9_ss_5000']
         exception = 0
-        plot_cluster_image='n'
+        plot_cluster_image='y'
         settings={0:{'thresh':60,'eps':8.0,'minpts':20},10:{'thresh':60,'eps':8.0,'minpts':20},
                   50:{'thresh':60,'eps':8.0,'minpts':150},80:{'thresh':20,'eps':8.0,'minpts':100},
-                  100:{'thresh':50,'eps':8.0,'minpts':125}}
+                  100:{'thresh':50,'eps':8.0,'minpts':50}}#125
         for subdir in sub_list:
             file_loc = path + subdir + '/' + 'Variance/'
             print(file_loc)
@@ -486,19 +582,29 @@ class ImageProcessing:
                Plotting a concise comparison of pdfs of different conditions of operation
                :return:
                """
-        H2_perc = [0]#[0, 10, 50, 80, 100]
+        H2_perc = [0, 10, 50, 80, 100]
         phi = [0.3, 0.35, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
         param_label={'aspect_ratio':'Aspect Ratio', 'x_com':'X$_{COM}$ (pixels)', 'Lxx':'L$_{xx}$ (pixels)',
                      'Lyy':'L$_{yy}$ (pixels)','y_com':'Y$_{COM}$ (pixels)','spacing':'Spacing',
-                     'volume':'Volume(pixels)','hydrau_dia':'Hydraulic Diameter','xmin':'X$_{min}$'}
+                     'volume':'Volume(pixels)','hydrau_dia':'Hydraulic Diameter','xmin':'X$_{min}$',
+                     'rect_properties':"Rect Prop",'num_cluster':"Number of Clusters","rot_angle":"Rotation Angle(deg"}
         N2_perc = [0, 15, 11]
         path = self.drive + self.folder
         #sub_list = self.image_dir_list()
         label_size = 18.0
         tick_size = 12.0
+        dict_data={}
+        dict_x = {}
+        dict_leg={}
+        minx = 0
+        maxx = 0
+        x_arr=[]
         for i in range(len(H2_perc)):
-            figure, ax = plt.subplots(dpi=600)
+            #figure, ax = plt.subplots(dpi=600)
             leg=[]
+            dict_data[H2_perc[i]]= []
+            dict_x[H2_perc[i]] = []
+            dict_leg[H2_perc[i]]=[]
             for j in range(len(phi)):
                 folder = "NV100_H2_" + str(H2_perc[i]) + "_phi_" + str(phi[j])
                 folder = folder + "/" + "Variance/"
@@ -509,8 +615,8 @@ class ImageProcessing:
                             break
                     with open(path + folder + nm, 'rb') as file:
                         dict_pdf = pickle.load(file)
-                    minval = np.min(dict_pdf[pdf_param])
-                    maxval = np.max(dict_pdf[pdf_param])
+                    #minval = np.min(dict_pdf[pdf_param])
+                    #maxval = np.max(dict_pdf[pdf_param])
                     red_vol = np.array(dict_pdf['volume'])
                     red_Lxx = np.array(dict_pdf['Lxx'])
                     red_Lyy = np.array(dict_pdf['Lyy'])
@@ -518,26 +624,57 @@ class ImageProcessing:
                     red_ycom = np.array(dict_pdf['y_com'])
                     red_ind2 = np.where(red_Lyy>5)[0]#np.where(red_ycom>0)[0]
                     red_ind_tot = list(set.intersection(set(red_ind),set(red_ind2)))
-                    red_val = np.array(dict_pdf[pdf_param])[red_ind_tot]
+                    bin=20
                     if pdf_param == 'aspect_ratio':
+                        rect_prop = np.array(dict_pdf['rect_properties'])
+                        unzipped = list(zip(*rect_prop[:,1]))
+                        width = np.array(unzipped[0])
+                        height = np.array(unzipped[1])
+                        red_val = np.array(width/height)[red_ind_tot]
                         ind_invt = np.where(red_val<1.0)[0]
                         red_val[ind_invt] = 1.0/red_val[ind_invt]
+                    elif pdf_param=='rot_angle':
+                        rect_prop = np.array(dict_pdf['rect_properties'])
+                        angle = np.array(rect_prop[:, 2])
+                        red_val = angle[red_ind_tot]
+                    elif pdf_param=='num_cluster':
+                        red_val = np.array(dict_pdf[pdf_param])
+                        bin=10
+                    else:
+                        red_val = np.array(dict_pdf[pdf_param])[red_ind_tot]
                     red_vol_hist = red_vol[red_ind_tot]
-                    hist, bin_edge = np.histogram(red_val, bins=20,
+                    hist, bin_edge = np.histogram(red_val, bins=bin,
                                                   density=True)#, weights=red_vol[red_ind_tot])
-                    hist_vol, bin_edge_vol = np.histogram(red_vol_hist, bins=20,
+                    hist_vol, bin_edge_vol = np.histogram(red_vol_hist, bins=50,
                                                   density=True)
                     pdf_x = (bin_edge[0:-1] + bin_edge[1:]) / 2.0
                     pdf_x_vol = (bin_edge_vol[0:-1] + bin_edge_vol[1:]) / 2.0
-                    ax.plot(pdf_x, hist)#*pdf_x_vol)
-                    leg.append(phi[j])
+                    try:
+                        dict_data[H2_perc[i]] = np.dstack((dict_data[H2_perc[i]],hist))
+                        dict_x[H2_perc[i]] = np.dstack((dict_x[H2_perc[i]],pdf_x))
+                    except:
+                        dict_data[H2_perc[i]] = np.array(hist)
+                        dict_x[H2_perc[i]] = np.array(pdf_x)
+                    #dict_data[H2_perc[i]][phi(j)] = np.array(hist)
+                    #dict_x[H2_perc[i]][phi(j)] = np.array(pdf_x)
+                    dict_leg[H2_perc[i]].append(phi[j])
+                    x_arr.append(pdf_x)
 
 
                 except:
                     #print("Phi=",phi[j])
                     continue
+
+        for i in range(len(H2_perc)):
+            figure, ax = plt.subplots(dpi=600)
+            xset = np.squeeze(np.array(dict_x[H2_perc[i]]))
+            yset = np.squeeze(np.array(dict_data[H2_perc[i]]))
+            minx = 0#np.min(x_arr)
+            maxx = np.max(x_arr)
+            ax.plot(xset,yset)
             mkr_sz_leg = 2.0
-            ax.legend(leg, title='$\phi$',title_fontsize=13.0,markerscale=mkr_sz_leg, fontsize=12.0,)
+            ax.set_xlim((minx,maxx))
+            ax.legend(dict_leg[H2_perc[i]], title='$\phi$',title_fontsize=13.0,markerscale=mkr_sz_leg, fontsize=12.0,)
             ax.set_ylabel("Probability density", fontsize=label_size)
             ax.set_xlabel(param_label[pdf_param], fontsize=label_size)
             ax.tick_params(axis='both', labelsize=tick_size, width=3.0)
@@ -805,7 +942,7 @@ if __name__=="__main__":
     #ImgProc.main_comparison()
     ImgProc.cluster()
     #ImgProc.pdf_plot()
-    pdf_param =['volume', 'x_com', 'y_com', 'Lxx', 'Lyy', 'xmin','spacing','hydrau_dia','aspect_ratio']#['aspect_ratio', 'x_com', 'Lxx']#['aspect_ratio']#
+    pdf_param =['aspect_ratio']#['rot_angle','num_cluster','volume', 'x_com', 'y_com', 'Lxx', 'Lyy', 'xmin','spacing','hydrau_dia','aspect_ratio']#['aspect_ratio', 'x_com', 'Lxx']#['aspect_ratio']#
     for param in pdf_param:
         ImgProc.pdf_comparison_h2percwise(param)
 
