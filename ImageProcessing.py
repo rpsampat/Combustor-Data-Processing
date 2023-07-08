@@ -62,8 +62,8 @@ class ImageProcessing:
         :return:
         """
         path = self.drive + self.folder
-        identifiers = ["NV100_", "H2_100","_phi_1.0"]
-        identifier_exclude = ["_index","N2","CO2"]
+        identifiers = ["NV100_", "H2_100","_phi_"]
+        identifier_exclude = ["_index","N2","CO2","_phi_1.0"]
         identifier_optional = ["H2_"]
         subdir_list = next(os.walk(path))[1]  # list of immediate subdirectories within the data directory
         sub_list=[]
@@ -362,7 +362,7 @@ class ImageProcessing:
         plot_cluster_image='y'
         settings={0:{'thresh':60,'eps':8.0,'minpts':20},10:{'thresh':60,'eps':8.0,'minpts':20},
                   50:{'thresh':60,'eps':8.0,'minpts':150},80:{'thresh':20,'eps':8.0,'minpts':100},
-                  100:{'thresh':50,'eps':8.0,'minpts':50}}#125
+                  100:{'thresh':50,'eps':8.0,'minpts':125}}#125
         for subdir in sub_list:
             file_loc = path + subdir + '/' + 'Variance/'
             print(file_loc)
@@ -415,8 +415,12 @@ class ImageProcessing:
                 """
                 img = cv2.imread(file_loc+name)
                 shp = np.shape(img)
-                img[:, :, 1] = np.zeros((shp[0], shp[1]))
-                img[:, :, 2] = np.zeros((shp[0], shp[1]))
+                if check_id=="_H2_100_":
+                    #Including green and red channel for 100% H2 case due to faint signal
+                    pass
+                else:
+                    img[:, :, 1] = np.zeros((shp[0], shp[1]))
+                    img[:, :, 2] = np.zeros((shp[0], shp[1]))
                 # Equalising histogram and extracting points above a certain threshold which are
                 #  expected to represent flame structures
                 #img_thresh = self.image_enhancement(img,False,lower_lim=150)
@@ -599,6 +603,7 @@ class ImageProcessing:
         minx = 0
         maxx = 0
         x_arr=[]
+        pyr_scale=3
         for i in range(len(H2_perc)):
             #figure, ax = plt.subplots(dpi=600)
             leg=[]
@@ -620,9 +625,9 @@ class ImageProcessing:
                     red_vol = np.array(dict_pdf['volume'])
                     red_Lxx = np.array(dict_pdf['Lxx'])
                     red_Lyy = np.array(dict_pdf['Lyy'])
-                    red_ind = np.where(red_vol>1000)[0]#10000np.where(red_Lxx>100)[0]#
+                    red_ind = np.where(red_vol>500)[0]#10000np.where(red_Lxx>100)[0]#
                     red_ycom = np.array(dict_pdf['y_com'])
-                    red_ind2 = np.where(red_Lyy>5)[0]#np.where(red_ycom>0)[0]
+                    red_ind2 = np.where(red_Lxx>50)[0]#np.where(red_ycom>0)[0]
                     red_ind_tot = list(set.intersection(set(red_ind),set(red_ind2)))
                     bin=20
                     if pdf_param == 'aspect_ratio':
@@ -637,6 +642,11 @@ class ImageProcessing:
                         rect_prop = np.array(dict_pdf['rect_properties'])
                         angle = np.array(rect_prop[:, 2])
                         red_val = angle[red_ind_tot]
+                    elif pdf_param=='x_com':
+                        #rect_prop = np.array(dict_pdf['rect_properties'])
+                        #unzipped = list(zip(*rect_prop[:,1]))
+                        #red_val = np.array(unzipped[0])[red_ind_tot]*self.scale*pyr_scale
+                        red_val = np.array(dict_pdf[pdf_param])[red_ind_tot]*self.scale*pyr_scale
                     elif pdf_param=='num_cluster':
                         red_val = np.array(dict_pdf[pdf_param])
                         bin=10
@@ -940,9 +950,9 @@ if __name__=="__main__":
     ImgProc = ImageProcessing()
     #ImgProc.main()
     #ImgProc.main_comparison()
-    ImgProc.cluster()
+    #ImgProc.cluster()
     #ImgProc.pdf_plot()
-    pdf_param =['aspect_ratio']#['rot_angle','num_cluster','volume', 'x_com', 'y_com', 'Lxx', 'Lyy', 'xmin','spacing','hydrau_dia','aspect_ratio']#['aspect_ratio', 'x_com', 'Lxx']#['aspect_ratio']#
+    pdf_param =['x_com']#['rot_angle','num_cluster','volume', 'x_com', 'y_com', 'Lxx', 'Lyy', 'xmin','spacing','hydrau_dia','aspect_ratio']#['aspect_ratio', 'x_com', 'Lxx']#['aspect_ratio']#
     for param in pdf_param:
         ImgProc.pdf_comparison_h2percwise(param)
 
