@@ -7,6 +7,8 @@ import cv2
 import os
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import matplotlib.lines as mlines
 from sklearn.cluster import DBSCAN,KMeans
 import EdgeDetection as ED
 from SavitzkyGolay2D import sgolay2d
@@ -588,7 +590,10 @@ class ImageProcessing:
                """
         H2_perc = [0, 10, 50, 80, 100]
         phi = [0.3, 0.35, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        param_label={'aspect_ratio':'Aspect Ratio', 'x_com':'X$_{COM}$ (pixels)', 'Lxx':'L$_{xx}$ (pixels)',
+        color_list = mcolors.TABLEAU_COLORS
+        color_list = list(color_list.keys())[0:len(phi)]
+        color_list = list(color_list[::-1])
+        param_label={'aspect_ratio':'Aspect Ratio', 'x_com':'X$_{COM}$ (mm)', 'Lxx':'L$_{xx}$ (pixels)',
                      'Lyy':'L$_{yy}$ (pixels)','y_com':'Y$_{COM}$ (pixels)','spacing':'Spacing',
                      'volume':'Volume(pixels)','hydrau_dia':'Hydraulic Diameter','xmin':'X$_{min}$',
                      'rect_properties':"Rect Prop",'num_cluster':"Number of Clusters","rot_angle":"Rotation Angle(deg"}
@@ -681,10 +686,20 @@ class ImageProcessing:
             yset = np.squeeze(np.array(dict_data[H2_perc[i]]))
             minx = 0#np.min(x_arr)
             maxx = np.max(x_arr)
-            ax.plot(xset,yset)
+            shp = np.shape(xset)
+            phi_arr = np.array(phi)
+            handle_list = []
+            for j in range(shp[1]):
+                phi_curr = dict_leg[H2_perc[i]][j]
+                phi_ind = np.where(phi_arr==phi_curr)[0][0]
+                #print(phi_ind)
+                ax.plot(xset[:,j],yset[:,j],color = color_list[phi_ind],marker = 'o',ms=2.0)
+                handle_list.append(
+                    mlines.Line2D([], [], color=color_list[phi_ind], marker='o', linestyle='-', linewidth=0.0,
+                                  markersize=2.5, label=str(phi_curr) + "%"))
             mkr_sz_leg = 2.0
             ax.set_xlim((minx,maxx))
-            ax.legend(dict_leg[H2_perc[i]], title='$\phi$',title_fontsize=13.0,markerscale=mkr_sz_leg, fontsize=12.0,)
+            ax.legend(handles=handle_list, title='$\phi$',title_fontsize=13.0,markerscale=mkr_sz_leg, fontsize=12.0,)
             ax.set_ylabel("Probability density", fontsize=label_size)
             ax.set_xlabel(param_label[pdf_param], fontsize=label_size)
             ax.tick_params(axis='both', labelsize=tick_size, width=3.0)
@@ -952,8 +967,9 @@ if __name__=="__main__":
     #ImgProc.main_comparison()
     #ImgProc.cluster()
     #ImgProc.pdf_plot()
-    pdf_param =['x_com']#['rot_angle','num_cluster','volume', 'x_com', 'y_com', 'Lxx', 'Lyy', 'xmin','spacing','hydrau_dia','aspect_ratio']#['aspect_ratio', 'x_com', 'Lxx']#['aspect_ratio']#
+    pdf_param =['x_com']#['rot_angle','num_cluster','volume', 'x_com', 'y_com', 'Lxx', 'Lyy', 'xmin','spacing','aspect_ratio']#['aspect_ratio', 'x_com', 'Lxx']#['aspect_ratio']#
     for param in pdf_param:
+        print(param)
         ImgProc.pdf_comparison_h2percwise(param)
 
 
