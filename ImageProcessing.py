@@ -16,7 +16,7 @@ from SavitzkyGolay2D import sgolay2d
 class ImageProcessing:
     def __init__(self):
         # 'TC9'=='Flang Temp', 'TC11'=='Frame Temp'
-        self.drive = 'O:/'#'P:/'#
+        self.drive = 'P:/'#'P:/'#
         self.folder = "FlamelessCombustor_Jan2023/DSLR/OldTube_DSLR_UV_GasAnalyser/"#"ExhaustModification_June2022/ModifiedExhaust_20220602/DSLR_ExhaustModification_2022_06_02/"#
         self.scaling_folder = "Scaling images with light on/"
         self.scale = self.scaling()
@@ -184,11 +184,11 @@ class ImageProcessing:
         Plotting a concise comparison of images of different conditions of operation
         :return:
         """
-        H2_perc = [0, 10,50,80,100]
-        phi = [0.6,0.8,1.0]#[0.3,0.35,0.5,0.6,0.7, 0.8, 0.9,1.0]
+        H2_perc = [0, 10,50,80]#,100]
+        phi = [0.6,0.7,0.8,0.9,1.0]#[0.3,0.35,0.5,0.6,0.7, 0.8, 0.9,1.0]#[0.6,0.8,1.0]#
         N2_perc = [0,15,11]
         px = 1.0/300.0
-        figure,ax = plt.subplots(len(phi),len(H2_perc),sharex=True, sharey=True, dpi=300, gridspec_kw={'wspace': 0.1, 'hspace': 0.0025}, figsize=(10,4.5))#(24,18))#(10,4.5))#,
+        figure,ax = plt.subplots(len(phi),len(H2_perc),sharex=True, sharey=True, dpi=300, gridspec_kw={'wspace': 0.1, 'hspace': 0.0025}, figsize=(6.95,5.5))#(24,18))#(10,4.5))#,
                          #gridspec_kw={'wspace': 0.01, 'hspace': 0.01})# figsiz=
         path = self.drive + self.folder
         sub_list = self.image_dir_list()
@@ -205,6 +205,7 @@ class ImageProcessing:
             img_blank = cv2.pyrDown(img_blank)
             n = n + 1
         shp0 = np.shape(img_blank)
+        shp=shp0
 
         #self.scale=1.0
 
@@ -300,7 +301,7 @@ class ImageProcessing:
                         ax[j, i].set_title(str(H2_perc[i]))
                     if i == 0 and j < len(phi) - 1:
                         # ax[j, i].set_frame_on(True)
-                        ax[j, i].set_ylabel(str(phi[j]) + "\n" + "$\\regular_{Y (mm)}$")
+                        ax[j, i].set_ylabel(str(phi[j]) + "\n" + "$\\regular_{Y (mm)}$")#,labelpad=40)
                         ax[j, i].axis('on')
                         ticky0 = np.linspace(0, shp[0], len(ax[j, i].get_yticks()))
                         # ticky0_min = np.min(ticky0)
@@ -309,7 +310,7 @@ class ImageProcessing:
                         ax[j, i].set_yticks(ticks=ticky0, labels=ticky1)
                         ax[j, i].tick_params(axis='both', which='both', labelsize=tick_size, width=1.0)
                         ax[j, i].xaxis.set_tick_params(labelbottom=False, width=0)
-                        # ax[j, i].yaxis.set_tick_params(labelleft=False,width=0)
+                        ax[j, i].yaxis.set_tick_params(labelleft=False,width=0)
                     if i > 0 and j == len(phi) - 1:
                         # ax[j, i].set_frame_on(True)
                         ax[j, i].set_xlabel("$\\regular_{X (mm)}$")
@@ -342,7 +343,7 @@ class ImageProcessing:
 
                     continue
         figure.suptitle("Hydrogen %")
-        figure.text(0.025,0.33,"Equivalence Ratio ($\phi$)", rotation='vertical')
+        figure.text(-0.001,0.33,"Equivalence Ratio ($\phi$)", rotation='vertical')#0.025
         plt.savefig(path + 'avg_comparison_reduced.png', bbox_inches='tight')
         #plt.show()
 
@@ -696,7 +697,7 @@ class ImageProcessing:
                 ax.plot(xset[:,j],yset[:,j],color = color_list[phi_ind],marker = 'o',ms=2.0)
                 handle_list.append(
                     mlines.Line2D([], [], color=color_list[phi_ind], marker='o', linestyle='-', linewidth=0.0,
-                                  markersize=2.5, label=str(phi_curr) + "%"))
+                                  markersize=2.5, label=str(phi_curr)))
             mkr_sz_leg = 2.0
             ax.set_xlim((minx,maxx))
             ax.legend(handles=handle_list, title='$\phi$',title_fontsize=13.0,markerscale=mkr_sz_leg, fontsize=12.0,)
@@ -964,12 +965,12 @@ class ImageProcessing:
 if __name__=="__main__":
     ImgProc = ImageProcessing()
     #ImgProc.main()
-    #ImgProc.main_comparison()
+    ImgProc.main_comparison()
     #ImgProc.cluster()
     #ImgProc.pdf_plot()
-    pdf_param =['x_com']#['rot_angle','num_cluster','volume', 'x_com', 'y_com', 'Lxx', 'Lyy', 'xmin','spacing','aspect_ratio']#['aspect_ratio', 'x_com', 'Lxx']#['aspect_ratio']#
+    """pdf_param =['rot_angle','num_cluster','volume', 'x_com', 'y_com', 'Lxx', 'Lyy', 'xmin','spacing','aspect_ratio']#['aspect_ratio', 'x_com', 'Lxx']#['aspect_ratio']#['x_com']#
     for param in pdf_param:
         print(param)
-        ImgProc.pdf_comparison_h2percwise(param)
+        ImgProc.pdf_comparison_h2percwise(param)"""
 
 

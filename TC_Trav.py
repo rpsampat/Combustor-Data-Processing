@@ -56,6 +56,13 @@ class TC_Trav:
         self.MW_N2 = gas.molecular_weights[species.index('N2')]
         self.MW_CH4 = gas.molecular_weights[species.index('CH4')]
         self.MW_H2 = gas.molecular_weights[species.index('H2')]
+        self.dia_tc = 0.003 #m
+        self.epsi_tc = 0.4  # thermocouple emissivity (ceramic alumina)
+        self.epsi_gas = 0.05  #
+        self.epsi_wall = 0.79  # combustor wall emissivity
+        self.sigma = 5.6704e-8  # stefan-boltzman constant
+        self.Pr_air = 0.7
+        self.dia_burner = 206.0  # mm
 
 
     def read_tdms(self,file):
@@ -246,13 +253,91 @@ class TC_Trav:
 
         return excess_o2
 
+    def convection_thermocouple(self, u, Temp):
+        """
+        Convection between thermocouple and external cooling flow modelled as cross flow around cylinder
+        :return:
+        """
+        air = ct.Solution('air.yaml')
+        air.TP = Temp + 273.15, ct.one_atm
+        if u <= 0:
+            h = 50.0
+            return h
+        else:
+            Re_tc = air.density * u * (self.dia_tc) / air.viscosity
+            Nu_lam = 0.664 * (Re_tc ** 0.5) * (self.Pr_air ** 0.333)
+            Nu_turb = 0.037 * (Re_tc ** 0.8) * self.Pr_air / (
+                    1 + 2.443 * (Re_tc ** -0.1) * (self.Pr_air ** (2.0 / 3.0) - 1))
+            Nu = 0.3 + math.sqrt(Nu_lam ** 2 + Nu_turb ** 2)
+            h = Nu * air.thermal_conductivity / self.dia_tc
+            # print "Nu=", Nu
+
+            return h
+
+    def heat_balance(self, T_wall, area_cond):
+        """
+        A T^4 + B T + C = 0
+        :return:
+        """
+        dx = 0.001
+        h = self.convection_thermocouple()
+        area_rad_tc = (math.pi / 4.0) * self.dia_tc ** 2 + math.pi * self.dia_tc * 0.10
+        area_rad_chamber = math.pi * self.dia_chamber * 0.1
+
+        area_conv = math.pi * self.dia_tc * 0.10
+        A = -1.0 * self.epsi_tc * self.sigma * area_rad_tc
+        B = (-self.k_steel / dx) * area_cond - h * area_conv
+        C = self.epsi_wall * self.sigma * T_wall ** 4.0 * area_rad_tc + (self.k_steel / dx) * T_wall * area_cond \
+            + h * self.T_air * area_conv
+        coeff = [A, 0.0, 0.0, B, C]
+        roots = np.roots(coeff)
+        root_eff = roots.real[(abs(roots.imag) < 1e-05) & (roots.real > 0.0)]
+        Q_rad = -1.0 * self.epsi_tc * self.sigma * area_rad_tc * root_eff[0] ** 4.0 \
+                + self.epsi_wall * self.sigma * T_wall ** 4.0 * area_rad_tc
+        Q_rad_chamber = self.epsi_wall * self.sigma * T_wall ** 4.0 * area_rad_chamber
+        return root_eff, Q_rad, Q_rad_chamber
+
+    def thermocouple_corr(self, Temp_C, xloc, u,T_surr):
+        Temp = Temp_C + 273.15  # K
+        h = self.convection_thermocouple(u, Temp_C)
+        #T_surr = 15 + 273.15  # K
+        if xloc > self.dia_burner / 2.0:
+            T_corr = Temp + self.sigma * (self.epsi_tc * Temp ** 4.0 - self.epsi_gas * T_surr ** 4.0) / h
+        else:
+            A = self.sigma * self.epsi_gas
+            B = h
+            C = -h * Temp - self.sigma * self.epsi_tc * Temp ** 4.0
+            coeff = [A, 0.0, 0.0, B, C]
+            roots = np.roots(coeff)
+            # print Temp
+            # print roots
+            root_eff = roots.real[(abs(roots.imag) < 1e-05) & (roots.real > 0.0)]
+            T_corr = root_eff
+
+        return T_corr
+
+    def TC_raw_to_corr(self,xpos,TC):
+        T_wall = TC[np.where(xpos==0.0)[0]]+273.15 # K
+        for x in range(len(xpos)):
+            T_corr = self.thermocouple_corr(TC[x],xpos[x],u=10.0, T_surr = T_wall)
+            #if len(T_corr)>1:
+             #   print(T_corr[0])
+            try:
+                T_corr_arr=np.append(T_corr_arr,T_corr[0]-273.15)
+            except:
+                T_corr_arr = np.array([T_corr[0]-273.15])
+
+        return T_corr_arr
+
+
+
     def data_comparison(self):
         """
         Plotting a concise comparison of images of different conditions of operation
         :return:
         """
-        H2_perc = [0,80]#[0,50,80,100]
-        port = [2,3,5]#[2,3,5,6]
+        H2_perc = [0,50,80,100]#[0,80]#
+        port = [2,3,5,6]#[2,3,5]#
         N2_perc = [0,15,11]
         pathsave = self.drive + self.folder + "/Results_TC_trav/"
         with open(self.drive + self.folder + "Unified_dataset_TC_traverse", 'rb') as f:
@@ -320,9 +405,15 @@ class TC_Trav:
                         TC15_avg = np.average(dataset[name]['TC15'].reshape(-1, 10), axis=1)
                         TC15 = np.convolve(TC15_avg[0:ind_slice], np.ones(N_kernel) / (N_kernel), mode='valid')
                         phi_ind = phi_list.index(phi)
-                        xpos = xpos/r_chamber
-                        ax[j, i].scatter(xpos, TC15, s=mkr_sz, linewidths=0.0,color = color_list[phi_ind])
-                        ax[j,i].set_ylim(450,1500)
+                        T_corr = self.TC_raw_to_corr(xpos,TC15)
+                        xpos = xpos / r_chamber
+                        try:
+                            ax[j, i].scatter(xpos, T_corr, s=mkr_sz, linewidths=0.0,color = color_list[phi_ind])
+                        except:
+                            print(len(T_corr))
+                            print(len(xpos))
+                            print('Port' + str(port[i])+ '_phi_'+str(phi)+'H2_' + str(H2_perc[j]))
+                        ax[j,i].set_ylim(450,2500)
 
                 if count==0:
                     ax[j, i].axis('off')
@@ -364,8 +455,8 @@ class TC_Trav:
 
         #figure.tight_layout()
         #plt.show()
-        plt.savefig(pathsave + 'TC_comparison_reduc.png', bbox_inches='tight')
-        plt.savefig(pathsave + 'TC_comparison_reduc.pdf', bbox_inches='tight')
+        plt.savefig(pathsave + 'TC_comparison.png', bbox_inches='tight')
+        plt.savefig(pathsave + 'TC_comparison.pdf', bbox_inches='tight')
         #plt.show()
         plt.close(figure)
     def data_plot_gascomp_exh(self):
