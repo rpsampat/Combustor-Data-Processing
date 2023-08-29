@@ -260,15 +260,18 @@ class TC_Trav:
         """
         air = ct.Solution('air.yaml')
         air.TP = Temp + 273.15, ct.one_atm
-        if u <= 0:
+        if u < 0:
             h = 50.0
             return h
         else:
-            Re_tc = air.density * u * (self.dia_tc) / air.viscosity
-            Nu_lam = 0.664 * (Re_tc ** 0.5) * (self.Pr_air ** 0.333)
-            Nu_turb = 0.037 * (Re_tc ** 0.8) * self.Pr_air / (
-                    1 + 2.443 * (Re_tc ** -0.1) * (self.Pr_air ** (2.0 / 3.0) - 1))
-            Nu = 0.3 + math.sqrt(Nu_lam ** 2 + Nu_turb ** 2)
+            try:
+                Re_tc = air.density * u * (self.dia_tc) / air.viscosity
+                Nu_lam = 0.664 * (Re_tc ** 0.5) * (self.Pr_air ** 0.333)
+                Nu_turb = 0.037 * (Re_tc ** 0.8) * self.Pr_air / (
+                        1 + 2.443 * (Re_tc ** -0.1) * (self.Pr_air ** (2.0 / 3.0) - 1))
+                Nu = 0.3 + math.sqrt(Nu_lam ** 2 + Nu_turb ** 2)
+            except:
+                Nu=0.3
             h = Nu * air.thermal_conductivity / self.dia_tc
             # print "Nu=", Nu
 
@@ -301,31 +304,52 @@ class TC_Trav:
         Temp = Temp_C + 273.15  # K
         h = self.convection_thermocouple(u, Temp_C)
         #T_surr = 15 + 273.15  # K
-        if xloc > self.dia_burner / 2.0:
+        """if xloc > self.dia_burner / 2.0:
             T_corr = Temp + self.sigma * (self.epsi_tc * Temp ** 4.0 - self.epsi_gas * T_surr ** 4.0) / h
-        else:
-            A = self.sigma * self.epsi_gas
-            B = h
-            C = -h * Temp - self.sigma * self.epsi_tc * Temp ** 4.0
-            coeff = [A, 0.0, 0.0, B, C]
-            roots = np.roots(coeff)
-            # print Temp
-            # print roots
-            root_eff = roots.real[(abs(roots.imag) < 1e-05) & (roots.real > 0.0)]
-            T_corr = root_eff
+        else:"""
+        A = self.sigma * self.epsi_gas
+        B = h
+        C = -h * Temp - self.sigma * self.epsi_tc * Temp ** 4.0
+        coeff = [A, 0.0, 0.0, B, C]
+        #try:
+        roots = np.roots(coeff)
+        """except:
+            print("h=",h)
+            print("vel=",u)
+            print("Temp=",Temp_C)
+            print(A)
+            print(B)
+            print(C)"""
+        # print Temp
+        # print roots
+        root_eff = roots.real[(abs(roots.imag) < 1e-08) & (roots.real > 0.0)]
+        T_corr = root_eff
 
         return T_corr
 
-    def TC_raw_to_corr(self,xpos,TC):
+    def TC_raw_to_corr(self,xpos,TC,y_vel,u_vel):
         T_wall = TC[np.where(xpos==0.0)[0]]+273.15 # K
+        """fig,ax = plt.subplots()
+        ax.scatter(range(len(y_vel)),y_vel)
+        plt.show()"""
         for x in range(len(xpos)):
-            T_corr = self.thermocouple_corr(TC[x],xpos[x],u=10.0, T_surr = T_wall)
+            vel_ind = np.where(np.abs(y_vel-xpos[x])<self.dia_tc*1000.0/2.0)[0]
+            if len(vel_ind)==0:
+                u_conv = 0.0
+            else:
+                u_conv = np.mean(u_vel[vel_ind])
+            T_corr = self.thermocouple_corr(TC[x],xpos[x],u=u_conv, T_surr = T_wall)
+
+            #T_corr, Q_rad, Q_rad_chamber = self.heat_balance(T_wall, area_cond=0.0)
             #if len(T_corr)>1:
              #   print(T_corr[0])
             try:
                 T_corr_arr=np.append(T_corr_arr,T_corr[0]-273.15)
             except:
-                T_corr_arr = np.array([T_corr[0]-273.15])
+                try:
+                    T_corr_arr = np.array([T_corr[0]-273.15])
+                except:
+                    T_corr_arr = np.array([450])
 
         return T_corr_arr
 
@@ -337,7 +361,7 @@ class TC_Trav:
         :return:
         """
         H2_perc = [0,50,80,100]#[0,80]#
-        port = [2,3,5,6]#[2,3,5]#
+        port = [2,3,5,6]#[2,3,5,6]#[2,3,5]#
         N2_perc = [0,15,11]
         pathsave = self.drive + self.folder + "/Results_TC_trav/"
         with open(self.drive + self.folder + "Unified_dataset_TC_traverse", 'rb') as f:
@@ -347,7 +371,7 @@ class TC_Trav:
         # port=2
         # H2_perc = 80
 
-        phi_list = [0.3, 0.6, 0.8, 1.0]
+        phi_list = [0.3, 0.6, 0.8, 1.0]#[0.6,1.0]#
         ident_excl = ['N2_', '_CO2_']
         marker_list = ["o", "x", "x"]
         color_list = ['m', 'r', 'k', 'g']
@@ -405,15 +429,26 @@ class TC_Trav:
                         TC15_avg = np.average(dataset[name]['TC15'].reshape(-1, 10), axis=1)
                         TC15 = np.convolve(TC15_avg[0:ind_slice], np.ones(N_kernel) / (N_kernel), mode='valid')
                         phi_ind = phi_list.index(phi)
-                        T_corr = self.TC_raw_to_corr(xpos,TC15)
+                        if port[i] == 6:
+                            with open("phi08" + "_port" + str(5), 'rb') as f:
+                                dict_port = pickle.load(f)
+                        else:
+                            with open("phi08"+"_port"+str(port[i]), 'rb') as f:
+                                dict_port = pickle.load(f)
+                        T_corr = self.TC_raw_to_corr(xpos,TC15,y_vel = dict_port["y"],u_vel = np.abs(dict_port["u"]))
                         xpos = xpos / r_chamber
+                        dict_Tcorr={"T":T_corr,"xpos":xpos}
+
+
+                        with open(pathsave+"Tcorrected_"+"phi"+str(phi)+"_port"+str(port[i]), 'wb') as f:
+                            pickle.dump(dict_Tcorr, f, pickle.HIGHEST_PROTOCOL)
                         try:
                             ax[j, i].scatter(xpos, T_corr, s=mkr_sz, linewidths=0.0,color = color_list[phi_ind])
                         except:
                             print(len(T_corr))
                             print(len(xpos))
                             print('Port' + str(port[i])+ '_phi_'+str(phi)+'H2_' + str(H2_perc[j]))
-                        ax[j,i].set_ylim(450,2500)
+                        ax[j,i].set_ylim(450,2200)
 
                 if count==0:
                     ax[j, i].axis('off')
@@ -438,7 +473,7 @@ class TC_Trav:
                         ax[j, i].set_title("Port " + str(port[i]), fontsize=label_size*1.5)
                     if i == 0:
                         ax[j, i].set_ylabel("H$_2$=" + str(H2_perc[j]) + "%\n"+"Temperature (C)",
-                                            fontsize=label_size)
+                                            fontsize=label_size*0.75)
                         ax[j, i].axis('on')
 
                     if j == len(H2_perc) - 1:

@@ -150,7 +150,7 @@ class GasProbeTrav:
         Plotting a concise comparison of images of different conditions of operation
         :return:
         """
-        H2_perc = [0,80]#[0,50,80]
+        H2_perc = [0,50,80]#[0,50,80]
         port = [2,3,5]
         N2_perc = [0,15,11]
         pathsave = self.drive + self.folder + "/Results_GA_trav/"
@@ -354,7 +354,7 @@ class GasProbeTrav:
             return count
 
     def data_plot_axial(self,r_loc):
-        H2_perc = [0,80]#[0, 50, 80]
+        H2_perc = [0,50,80]#[0, 50, 80]
         port = [2, 3, 5,7]
         port_loc = {2:0.18367,3:0.2857,5:0.4897,7:1.204}
         N2_perc = [0, 15, 11]
